@@ -17,11 +17,16 @@ And skip everything else.
 
 Read these files IN THIS ORDER to rebuild understanding:
 
-1. `CLAUDE.md` — project constitution (should already be auto-loaded, but verify understanding)
-2. `ARCHITECTURE.md` — current system state, diagrams, what's built
-3. Check memory files (auto-loaded) — preferences, scope, architecture decisions
-4. Find the LATEST file in `.claude/context_dumps/` — read it fully for detailed session knowledge
-5. `git log --oneline -10` — see what was committed recently
+1. `.claude/last_session.json` — START HERE. Contains: last date, context dump path, commit hash, current segment, next task. This is your fastest path to orientation.
+2. Read the context dump file pointed to by `last_session.json` → `context_dump` field. This has the full mental model, decisions, and state.
+3. `CLAUDE.md` — project constitution (should already be auto-loaded, but verify understanding)
+4. `ARCHITECTURE.md` — current system state, diagrams, what's built
+5. `git log --oneline -5` — see if anything was committed after the last dump
+
+If `.claude/last_session.json` does NOT exist, fall back to:
+- Find the LATEST file in `.claude/context_dumps/` (sort by name, pick last)
+- Read it fully
+- Then read CLAUDE.md and ARCHITECTURE.md
 
 ## Step 3: Report back
 

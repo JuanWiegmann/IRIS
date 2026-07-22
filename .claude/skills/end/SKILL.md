@@ -40,7 +40,24 @@ Session: <date>
 
 ```
 
-## Step 3: Confirm
+## Step 3: Write Session Pointer
+
+After committing, write the current session info to `.claude/last_session.json`:
+
+```json
+{
+  "date": "<today's date>",
+  "context_dump": ".claude/context_dumps/<filename>",
+  "commit_hash": "<short hash>",
+  "commit_message": "<message summary>",
+  "segment": "<current segment number and name>",
+  "next_task": "<what's immediately next>"
+}
+```
+
+This file lets `/start` know exactly where to pick up. Include this file in the commit (run a quick `git add` + `git commit --amend` to include it, or add it before the main commit).
+
+## Step 4: Confirm
 
 Tell the user:
 ```
@@ -49,6 +66,7 @@ Tell the user:
 Context: .claude/context_dumps/<filename>
 Commit:  <short hash> — <message summary>
 Files:   <count> files committed
+Session pointer: .claude/last_session.json
 
 To resume: claude --continue
 To recover: /start
@@ -59,7 +77,8 @@ To recover: /start
 ## Rules
 
 - ALWAYS dump context BEFORE committing (so the dump is included in the commit)
+- ALWAYS write last_session.json (so /start can find the latest context)
 - Never push to remote — local commit only
 - If there are no changes to commit, skip the commit and say so
 - If git is not initialized, skip commit and warn
-- Include the context dump file in the commit
+- Include the context dump file AND last_session.json in the commit

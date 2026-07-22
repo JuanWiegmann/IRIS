@@ -1,0 +1,8 @@
+{
+  "date": "2026-07-22",
+  "context_dump": ".claude/context_dumps/session_2026-07-22_end.md",
+  "commit_hash": "885114e",
+  "commit_message": "segment 0: project skeleton, hooks, skills, architecture diagrams",
+  "segment": "Segment 1: MCP Server Foundation",
+  "next_task": "Install Python MCP SDK, create src/server.py, expose get_context() as first tool stub"
+}
