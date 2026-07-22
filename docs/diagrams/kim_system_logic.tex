@@ -1,0 +1,300 @@
+\documentclass[border=20pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usetikzlibrary{
+    shapes.geometric,
+    arrows.meta,
+    positioning,
+    fit,
+    backgrounds,
+    calc
+}
+
+% ── Colors ──
+\definecolor{accent}{RGB}{190, 30, 45}
+\definecolor{blue}{RGB}{40, 90, 160}
+\definecolor{green}{RGB}{30, 130, 76}
+\definecolor{orange}{RGB}{200, 120, 20}
+\definecolor{purple}{RGB}{120, 50, 160}
+\definecolor{gray}{RGB}{90, 90, 90}
+\definecolor{lightgray}{RGB}{248, 248, 248}
+\definecolor{midgray}{RGB}{200, 200, 200}
+
+% ── Styles ──
+\tikzset{
+    % External LLM
+    external/.style={
+        rectangle, draw=blue, fill=blue!6,
+        minimum width=4.5cm, minimum height=1.6cm,
+        rounded corners=4pt, line width=1.2pt,
+        font=\normalsize\bfseries\color{blue}, align=center
+    },
+    % MCP Tool
+    mcptool/.style={
+        rectangle, draw=accent, fill=accent!5,
+        minimum width=4.2cm, minimum height=1.4cm,
+        rounded corners=4pt, line width=1.1pt,
+        font=\small\bfseries\color{accent}, align=center
+    },
+    % Data store
+    datastore/.style={
+        rectangle, draw=orange, fill=orange!6,
+        minimum width=3cm, minimum height=1.1cm,
+        rounded corners=3pt, line width=1pt,
+        font=\small\bfseries\color{orange}, align=center
+    },
+    % Internal logic (deterministic)
+    logic/.style={
+        rectangle, draw=purple, fill=purple!5,
+        minimum width=3.8cm, minimum height=1.3cm,
+        rounded corners=4pt, line width=1.1pt,
+        font=\small\bfseries\color{purple}, align=center
+    },
+    % Anleitung
+    anleitung/.style={
+        rectangle, draw=green, fill=green!5,
+        minimum width=4.5cm, minimum height=1.4cm,
+        rounded corners=4pt, line width=1.1pt,
+        font=\small\bfseries\color{green}, align=center
+    },
+    % Decision
+    decide/.style={
+        diamond, draw=gray, fill=lightgray,
+        minimum width=2.8cm, minimum height=2cm,
+        line width=1pt, font=\small, align=center, inner sep=2pt
+    },
+    % Step label (numbered circle)
+    step/.style={
+        circle, draw=gray, fill=white,
+        minimum size=0.7cm, line width=0.8pt,
+        font=\small\bfseries\color{gray}
+    },
+    % Arrows
+    arrow/.style={-{Stealth[length=3.5mm, width=2.2mm]}, line width=1pt, gray},
+    arrowmcp/.style={-{Stealth[length=4mm, width=2.5mm]}, line width=1.3pt, accent},
+    arrowdata/.style={-{Stealth[length=3.5mm, width=2.2mm]}, line width=1pt, orange},
+    arrowlogic/.style={-{Stealth[length=3.5mm, width=2.2mm]}, line width=1pt, purple},
+    arrowext/.style={-{Stealth[length=4mm, width=2.5mm]}, line width=1.3pt, blue},
+    arrowdash/.style={-{Stealth[length=3.5mm, width=2.2mm]}, line width=0.9pt, gray, dashed},
+    arrowgreen/.style={-{Stealth[length=3.5mm, width=2.2mm]}, line width=1.1pt, green},
+    % Label
+    lbl/.style={font=\footnotesize, color=gray, align=center, fill=white, inner sep=2pt},
+    % Frames
+    frame/.style={rectangle, draw=midgray, fill=white, line width=1.3pt, rounded corners=7pt, inner sep=16pt},
+    framered/.style={rectangle, draw=accent!50, fill=accent!2, line width=1.5pt, rounded corners=8pt, inner sep=24pt},
+    frametitle/.style={font=\large\bfseries, anchor=north west, yshift=-4pt, xshift=6pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[node distance=1.8cm and 2.5cm]
+
+    % ════════════════════════════════════════════════════════════
+    %  USER + THEIR LLM (top)
+    % ════════════════════════════════════════════════════════════
+
+    \node[external] (userllm) at (0, 0)
+        {User's LLM\\{\small Claude, Copilot, ChatGPT, \ldots}};
+
+    \node[font=\normalsize\itshape\color{gray}, above=0.5cm of userllm, text width=10cm, align=center]
+        {User writes normally. LLM generates ALL responses.\\KIM only provides context and validation.};
+
+    % Anleitung (instructions the LLM follows)
+    \node[anleitung, left=3cm of userllm] (anleitung)
+        {Anleitung\\{\small\color{gray} Protocol the LLM follows}\\{\small\color{gray} (tool descriptions + rules)}};
+
+    \draw[arrowgreen] (anleitung.east) -- node[lbl, above] {Guides behavior} (userllm.west);
+
+    % ════════════════════════════════════════════════════════════
+    %  MCP TOOLS (KIM's exposed interface)
+    % ════════════════════════════════════════════════════════════
+
+    % Tool row
+    \node[mcptool, below=3cm of userllm, xshift=-7cm] (t_context)
+        {get\_context(query)\\{\small\color{gray} profile + relevant examples}};
+    \node[mcptool, right=1cm of t_context] (t_check)
+        {check\_draft(draft)\\{\small\color{gray} validate against profile}};
+    \node[mcptool, right=1cm of t_check] (t_onboard)
+        {onboard(answer)\\{\small\color{gray} GATE preference capture}};
+    \node[mcptool, right=1cm of t_onboard] (t_log)
+        {log\_output(text)\\{\small\color{gray} store for future retrieval}};
+
+    % LLM → Tools (numbered steps)
+    \node[step, below=1.2cm of userllm, xshift=-3cm] (s1) {1};
+    \node[step, below=1.2cm of userllm, xshift=0cm] (s2) {3};
+    \node[step, below=1.2cm of userllm, xshift=3cm] (s5) {5};
+
+    \draw[arrowmcp] (userllm.south) -- ++(0, -0.5) -| (t_context.north);
+    \draw[arrowmcp] (userllm.south) -- ++(0, -0.5) -| (t_check.north);
+    \draw[arrowmcp] (userllm.south) -- ++(0, -0.5) -| (t_onboard.north);
+    \draw[arrowmcp] (userllm.south) -- ++(0, -0.5) -| (t_log.north);
+
+    % ════════════════════════════════════════════════════════════
+    %  KIM INTERNAL LOGIC (deterministic, no LLM needed)
+    % ════════════════════════════════════════════════════════════
+
+    % Retrieval engine
+    \node[logic, below=2.5cm of t_context] (retrieval)
+        {Retrieval Engine\\{\small\color{gray} BM25 + vector similarity}};
+
+    % Profile checker (deterministic rules)
+    \node[logic, below=2.5cm of t_check] (checker)
+        {Profile Checker\\{\small\color{gray} rules + pattern matching}};
+
+    % GATE state machine
+    \node[logic, below=2.5cm of t_onboard] (gatestate)
+        {GATE State Machine\\{\small\color{gray} tracks onboarding progress}};
+
+    % Output logger
+    \node[logic, below=2.5cm of t_log] (logger)
+        {Output Logger\\{\small\color{gray} index + embed for retrieval}};
+
+    % Connect tools → logic
+    \draw[arrowlogic] (t_context.south) -- (retrieval.north);
+    \draw[arrowlogic] (t_check.south) -- (checker.north);
+    \draw[arrowlogic] (t_onboard.south) -- (gatestate.north);
+    \draw[arrowlogic] (t_log.south) -- (logger.north);
+
+    % ════════════════════════════════════════════════════════════
+    %  DATA LAYER (bottom)
+    % ════════════════════════════════════════════════════════════
+
+    \node[datastore, below=2.5cm of retrieval, xshift=0cm] (profile)
+        {\color{accent}User Profile};
+    \node[datastore, right=1cm of profile] (outputs)
+        {User Outputs\\{\small\color{gray}(past writing)}};
+    \node[datastore, right=1cm of outputs] (memory)
+        {Memory\\{\small\color{gray}(conversations)}};
+    \node[datastore, right=1cm of memory] (vectors)
+        {Vector Index\\{\small\color{gray}(embeddings)}};
+
+    % Logic → Data connections
+    \draw[arrowdata] (retrieval.south) -- ++(0, -0.8) -| (profile.north);
+    \draw[arrowdata] (retrieval.south) -- ++(0, -0.8) -| (outputs.north);
+    \draw[arrowdata] (retrieval.south) -- ++(0, -0.8) -| (vectors.north);
+    \draw[arrowdata] (checker.south) -- ++(0, -0.8) -| (profile.north east);
+    \draw[arrowdata] (gatestate.south) -- ++(0, -0.8) -| (profile.north east);
+    \draw[arrowdata] (logger.south) -- ++(0, -0.8) -| (outputs.north east);
+    \draw[arrowdata] (logger.south) -- ++(0, -0.8) -| (vectors.north east);
+
+    % ════════════════════════════════════════════════════════════
+    %  THE FLOW (numbered, right side)
+    % ════════════════════════════════════════════════════════════
+
+    \node[anchor=north west, font=\normalsize, text width=7.5cm, align=left]
+        at (9, 0) (flow) {
+        \textbf{\large Interaction Flow}\\[8pt]
+        \textbf{\color{blue}1.} User writes message to their LLM\\[4pt]
+        \textbf{\color{accent}2.} LLM calls \texttt{get\_context(query)}\\
+        \quad\quad KIM returns profile + relevant examples\\[4pt]
+        \textbf{\color{blue}3.} LLM generates draft response\\
+        \quad\quad (using KIM's context)\\[4pt]
+        \textbf{\color{accent}4.} LLM calls \texttt{check\_draft(draft)}\\
+        \quad\quad KIM validates against profile\\
+        \quad\quad \textit{\color{gray}(LLM doesn't know it's checking itself)}\\[4pt]
+        \textbf{\color{blue}5.} LLM revises if needed\\[4pt]
+        \textbf{\color{accent}6.} LLM calls \texttt{log\_output(final)}\\
+        \quad\quad KIM stores for future retrieval\\[12pt]
+        \textbf{\color{green}Key insight:}\\
+        The LLM thinks \texttt{check\_draft} is\\
+        an independent external service.\\
+        It gets unbiased feedback because\\
+        KIM validates with fresh eyes\\
+        (profile rules only, no generation context).
+    };
+
+    % ════════════════════════════════════════════════════════════
+    %  LAYER 2: SAMPLING (advanced, if supported)
+    % ════════════════════════════════════════════════════════════
+
+    \node[anchor=north west, font=\normalsize, text width=7.5cm, align=left]
+        at (9, -8.5) (layer2) {
+        \textbf{\large Layer 2: MCP Sampling}\\
+        {\small\color{gray}(Claude and advanced clients only)}\\[8pt]
+        If the LLM supports MCP sampling,\\
+        KIM can orchestrate multi-step flows:\\[4pt]
+        \textbullet\ Fresh context per ``agent'' role\\
+        \textbullet\ KIM controls the loop\\
+        \textbullet\ Better isolation between steps\\
+        \textbullet\ Same user LLM does the compute\\[8pt]
+        Falls back to Layer 1 (Anleitung)\\
+        for simpler MCP clients.
+    };
+
+    % ════════════════════════════════════════════════════════════
+    %  FRAMES
+    % ════════════════════════════════════════════════════════════
+
+    \begin{scope}[on background layer]
+        % KIM MCP Server frame
+        \node[framered,
+              fit=(t_context)(t_check)(t_onboard)(t_log)
+                  (retrieval)(checker)(gatestate)(logger)
+                  (profile)(outputs)(memory)(vectors),
+              inner sep=26pt] (kimframe) {};
+        \node[frametitle, color=accent] at (kimframe.north west)
+              {KIM --- MCP Server};
+        \node[font=\small\itshape\color{gray}, anchor=north east, text width=6cm, align=right]
+              at (kimframe.north east)
+              {No LLM inside. Pure logic + data.\\The User's LLM does all reasoning.};
+
+        % Tools sub-frame
+        \node[frame, fill=accent!2,
+              fit=(t_context)(t_check)(t_onboard)(t_log),
+              inner sep=12pt] (toolframe) {};
+        \node[font=\small\bfseries\color{accent}, anchor=north west]
+              at (toolframe.north west) {Exposed MCP Tools};
+
+        % Logic sub-frame
+        \node[frame, fill=purple!2,
+              fit=(retrieval)(checker)(gatestate)(logger),
+              inner sep=12pt] (logicframe) {};
+        \node[font=\small\bfseries\color{purple}, anchor=north west]
+              at (logicframe.north west) {Internal Logic (deterministic, no LLM)};
+
+        % Data sub-frame
+        \node[frame, fill=orange!2,
+              fit=(profile)(outputs)(memory)(vectors),
+              inner sep=12pt] (dataframe) {};
+        \node[font=\small\bfseries\color{orange}, anchor=north west]
+              at (dataframe.north west) {Persistent Data};
+    \end{scope}
+
+    % ════════════════════════════════════════════════════════════
+    %  LEGEND (bottom)
+    % ════════════════════════════════════════════════════════════
+
+    \node[anchor=north west, font=\normalsize\bfseries]
+        at ($(kimframe.south west)+(0, -1)$) (legtitle) {Legend:};
+
+    \node[draw=blue, fill=blue!6, minimum width=1cm, minimum height=0.5cm,
+          rounded corners=3pt, line width=1pt, right=0.4cm of legtitle] (l1) {};
+    \node[font=\small, right=0.2cm of l1] (l1t) {User's LLM (external)};
+
+    \node[draw=accent, fill=accent!5, minimum width=1cm, minimum height=0.5cm,
+          rounded corners=3pt, line width=1pt, right=0.8cm of l1t] (l2) {};
+    \node[font=\small, right=0.2cm of l2] (l2t) {MCP Tool (interface)};
+
+    \node[draw=purple, fill=purple!5, minimum width=1cm, minimum height=0.5cm,
+          rounded corners=3pt, line width=1pt, right=0.8cm of l2t] (l3) {};
+    \node[font=\small, right=0.2cm of l3] (l3t) {Internal Logic (no LLM)};
+
+    \node[draw=orange, fill=orange!6, minimum width=1cm, minimum height=0.5cm,
+          rounded corners=3pt, line width=1pt, right=0.8cm of l3t] (l4) {};
+    \node[font=\small, right=0.2cm of l4] (l4t) {Data Store};
+
+    \node[draw=green, fill=green!5, minimum width=1cm, minimum height=0.5cm,
+          rounded corners=3pt, line width=1pt, right=0.8cm of l4t] (l5) {};
+    \node[font=\small, right=0.2cm of l5] (l5t) {Anleitung (protocol)};
+
+    % Arrow legend
+    \node[font=\small, anchor=north west, below=0.5cm of legtitle.south west, text width=22cm] {
+        \textcolor{accent}{\rule[0.5ex]{0.8cm}{1.5pt}} MCP tool call \quad
+        \textcolor{purple}{\rule[0.5ex]{0.8cm}{1.5pt}} Internal processing \quad
+        \textcolor{orange}{\rule[0.5ex]{0.8cm}{1.5pt}} Data read/write \quad
+        \textcolor{green}{\rule[0.5ex]{0.8cm}{1.5pt}} Protocol guidance \quad
+        \textcolor{gray}{- - - -} Async / feedback
+    };
+
+\end{tikzpicture}
+\end{document}

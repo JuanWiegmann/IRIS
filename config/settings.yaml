@@ -1,0 +1,30 @@
+# KIM Configuration
+# LLM endpoints are configured here, credentials via environment variables
+
+llm:
+  ollama:
+    base_url: "http://localhost:11434"
+    default_model: "llama3.1:8b"
+    embedding_model: "nomic-embed-text"
+
+  bedrock:
+    region: "eu-central-1"
+    model_id: "anthropic.claude-sonnet-4-20250514"
+    # Credentials via AWS_PROFILE or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+
+routing:
+  # Complexity threshold: below this → Ollama, above → Bedrock
+  complexity_threshold: 0.6
+  # Always use Bedrock for these task types
+  force_cloud: ["onboarding", "validation", "complex_generation"]
+  # Always use Ollama for these
+  force_local: ["classification", "embedding", "summarization_simple"]
+
+memory:
+  stm_window: 10  # Number of recent messages in short-term memory
+  summary_interval: 5  # Generate summary every N exchanges
+  ltm_collection: "kim_memories"
+
+profile:
+  storage_path: "data/profiles/"
+  confidence_threshold: 0.7  # Minimum confidence to act on a preference
