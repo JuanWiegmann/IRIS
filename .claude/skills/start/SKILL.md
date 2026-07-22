@@ -9,13 +9,32 @@ When the user invokes this skill, try to get back to full working context as fas
 
 ## Step 1: Check if this IS a continued session
 
-If the conversation already has prior messages (i.e., this is `claude --continue`), just say:
+If the conversation already has prior messages about KIM (i.e., this is `claude --continue`), just say:
 "Session continued. We're at [current segment/step]. Ready to proceed?"
 And skip everything else.
 
-If this is a fresh session, read `.claude/last_session.json` first. If it has a `session_id` field, tell the user:
-"Last session ID: `<session_id>`. You can resume it with: `claude --resume`"
-Then proceed with recovery below in case they prefer to stay in this fresh session.
+## Step 1b: If fresh session — suggest resume first
+
+If this appears to be a FRESH session (no prior KIM conversation context), immediately:
+
+1. Read `.claude/last_session.json`
+2. Tell the user:
+
+```
+⚠️  This is a fresh session. For full context continuity, exit and run:
+
+    claude --continue
+
+Or resume a specific session:
+
+    claude --resume
+
+Last session: <date> | ID: <session_id>
+Segment: <segment> | Next: <next_task>
+```
+
+3. Then say: "If you want to stay in this fresh session, I'll recover from the context dump instead."
+4. Proceed with Step 2 (file-based recovery) only if the user confirms they want to stay.
 
 ## Step 2: If fresh session — recover context
 
