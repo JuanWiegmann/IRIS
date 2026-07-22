@@ -47,6 +47,7 @@ After committing, write the current session info to `.claude/last_session.json`:
 ```json
 {
   "date": "<today's date>",
+  "session_id": "<get from env var CLAUDE_CODE_SESSION_ID via Bash: echo $CLAUDE_CODE_SESSION_ID>",
   "context_dump": ".claude/context_dumps/<filename>",
   "commit_hash": "<short hash>",
   "commit_message": "<message summary>",
@@ -55,7 +56,9 @@ After committing, write the current session info to `.claude/last_session.json`:
 }
 ```
 
-This file lets `/start` know exactly where to pick up. Include this file in the commit (run a quick `git add` + `git commit --amend` to include it, or add it before the main commit).
+To get the session ID, run: `echo $CLAUDE_CODE_SESSION_ID`
+
+This file lets `/start` know exactly where to pick up AND which session to try `--resume` with. Include this file in the commit (run a quick `git add` + `git commit --amend` to include it, or add it before the main commit).
 
 ## Step 4: Confirm
 

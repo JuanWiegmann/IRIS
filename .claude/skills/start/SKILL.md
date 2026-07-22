@@ -13,6 +13,10 @@ If the conversation already has prior messages (i.e., this is `claude --continue
 "Session continued. We're at [current segment/step]. Ready to proceed?"
 And skip everything else.
 
+If this is a fresh session, read `.claude/last_session.json` first. If it has a `session_id` field, tell the user:
+"Last session ID: `<session_id>`. You can resume it with: `claude --resume`"
+Then proceed with recovery below in case they prefer to stay in this fresh session.
+
 ## Step 2: If fresh session — recover context
 
 Read these files IN THIS ORDER to rebuild understanding:
