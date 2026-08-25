@@ -71,11 +71,11 @@ graph TB
     style User fill:#E3F2FD,stroke:#1565C0
     style LLM fill:#E3F2FD,stroke:#1565C0
 
-    %% MCP Interface — Segment 1 (current)
-    style MCP fill:#FFF9C4,stroke:#F57F17
+    %% MCP Interface — Segment 1 (built)
+    style MCP fill:#C8E6C9,stroke:#2E7D32
 
-    %% Tools — Segment 1 (current)
-    style T_ctx fill:#FFF9C4,stroke:#F57F17
+    %% Tools — Segment 1 (get_context built, others planned)
+    style T_ctx fill:#C8E6C9,stroke:#2E7D32
     style T_chk fill:#f9f9f9,stroke:#ccc
     style T_onb fill:#f9f9f9,stroke:#ccc
     style T_log fill:#f9f9f9,stroke:#ccc
@@ -256,8 +256,8 @@ erDiagram
 ```mermaid
 graph LR
     S0[✓ Skeleton<br>+ Hooks]
-    S1[► MCP<br>Server]
-    S2[Data<br>Layer]
+    S1[✓ MCP<br>Server]
+    S2[► Data<br>Layer]
     S3[Retrieval]
     S4[Validation]
     S5[Onboarding]
@@ -269,8 +269,8 @@ graph LR
     S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
 
     style S0 fill:#C8E6C9,stroke:#2E7D32
-    style S1 fill:#FFF9C4,stroke:#F57F17
-    style S2 fill:#f5f5f5,stroke:#bbb
+    style S1 fill:#C8E6C9,stroke:#2E7D32
+    style S2 fill:#FFF9C4,stroke:#F57F17
     style S3 fill:#f5f5f5,stroke:#bbb
     style S4 fill:#f5f5f5,stroke:#bbb
     style S5 fill:#f5f5f5,stroke:#bbb
