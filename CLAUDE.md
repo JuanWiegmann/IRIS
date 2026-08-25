@@ -72,7 +72,7 @@ See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.t
 
 - [x] Segment 0: Project Skeleton + Context Architecture
 - [x] Segment 1: MCP Server Foundation
-- [ ] Segment 2: Profile & Data Layer
+- [x] Segment 2: Profile & Data Layer
 - [ ] Segment 3: Retrieval Engine
 - [ ] Segment 4: Draft Validation (The Self-Check)
 - [ ] Segment 5: GATE Onboarding System

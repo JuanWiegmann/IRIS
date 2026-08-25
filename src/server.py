@@ -15,10 +15,13 @@ Architecture:
 
 import asyncio
 from typing import Any
+from uuid import UUID
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
+
+from src.profile import get_or_create_profile, format_profile_for_llm
 
 
 # ═══════════════════════════════════════════════════════════
@@ -86,12 +89,10 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     """
     Handle get_context tool call.
 
-    Currently returns MOCK data for testing.
-    In later segments, this will:
-    1. Load user profile from storage (Segment 2)
-    2. Search for relevant outputs (Segment 3)
-    3. Rank by relevance (most-relevant-first, Wu et al. 2024)
-    4. Return structured context
+    Loads user profile and returns personalized context.
+
+    Segment 2: Loads real profile data
+    Segment 3: Will add relevant past outputs (retrieval + ranking)
 
     Args:
         arguments: {"query": str}
@@ -101,45 +102,40 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     """
     query = arguments.get("query", "")
 
-    # MOCK DATA (Segment 1 stub)
-    # This will be replaced with real data in Segment 2 & 3
-    mock_response = f"""# Personalized Context for: "{query}"
+    # TODO: Get user_id from MCP session context
+    # For now, use a fixed demo user ID
+    # In production, this would come from authentication
+    demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
 
-## User Profile
-- **Language:** German (de-DE)
-- **Tone:** Professional but approachable (technical depth, no jargon overload)
-- **Format Preference:** Concise with examples (bullet points preferred)
-- **Boundaries:**
-  - Avoid overly formal language ("Sie" is fine, but no corporate speak)
-  - Technical user (VW Group, software architecture background)
+    # Load or create user profile (Segment 2)
+    # Learning: learning/02_data_modeling/README.md#profile-loading
+    profile = await get_or_create_profile(demo_user_id)
+
+    # Format profile as markdown for LLM
+    profile_text = format_profile_for_llm(profile)
+
+    # Build full context response
+    response = f"""# Personalized Context for: "{query}"
+
+{profile_text}
 
 ## Relevant Past Outputs
-(Ranked by relevance to current query)
+*(Segment 3 - Retrieval engine not yet implemented)*
 
-1. **Email to team re: API design** (2026-07-15)
-   - Clear structure: Context → Problem → Solution → Next steps
-   - Used bullet points for action items
-   - Technical but accessible
-
-2. **Architecture document** (2026-07-10)
-   - Started with "Why" before "How"
-   - Included diagrams (LaTeX/Mermaid)
-   - Decision log format
-
-## Recent Context
-- Currently working on: KIM project (MCP middleware)
-- Recent topics: Claude Certified Architect prep, MCP protocol
-- Ongoing: Segment-by-segment learning approach
+Will include:
+- Past outputs ranked by relevance to current query
+- Most-relevant-first ordering (Wu et al. 2024)
+- BM25 + vector similarity hybrid ranking
 
 ---
-*Note: This is MOCK data for Segment 1 testing.*
-*Real profile/outputs will be loaded in Segment 2 & 3.*
+*Profile loaded from: ~/.kim/data/profiles/{profile.id}.json*
+*Next: Segment 3 will add retrieval engine*
 """
 
     return [
         TextContent(
             type="text",
-            text=mock_response
+            text=response
         )
     ]
 

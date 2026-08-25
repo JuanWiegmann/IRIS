@@ -27,8 +27,8 @@ async def test_server_has_tools():
 
 
 @pytest.mark.asyncio
-async def test_get_context_returns_mock_data():
-    """Test that get_context returns mock data (Segment 1 stub)."""
+async def test_get_context_returns_profile_data():
+    """Test that get_context returns real profile data (Segment 2)."""
     arguments = {"query": "Write an email"}
 
     result = await handle_get_context(arguments)
@@ -37,11 +37,17 @@ async def test_get_context_returns_mock_data():
     assert len(result) == 1
     assert result[0].type == "text"
 
-    # Should contain mock profile data
+    # Should contain real profile data
     text = result[0].text
     assert "User Profile" in text
-    assert "German" in text
-    assert "MOCK data" in text
+    assert "Language:" in text
+    assert "Tone:" in text
+    assert "Format Preference:" in text
+    assert "Profile Confidence:" in text
+
+    # Should indicate retrieval engine not yet implemented
+    assert "Segment 3" in text
+    assert "Retrieval engine not yet implemented" in text
 
 
 @pytest.mark.asyncio

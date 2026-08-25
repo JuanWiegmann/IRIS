@@ -86,8 +86,8 @@ graph TB
     style L_gate fill:#f9f9f9,stroke:#ccc
     style L_log fill:#f9f9f9,stroke:#ccc
 
-    %% Data — Segment 2 (planned next)
-    style D_prof fill:#f9f9f9,stroke:#ccc
+    %% Data — Segment 2 (profile built, outputs/memory/vectors planned)
+    style D_prof fill:#C8E6C9,stroke:#2E7D32
     style D_out fill:#f9f9f9,stroke:#ccc
     style D_mem fill:#f9f9f9,stroke:#ccc
     style D_vec fill:#f9f9f9,stroke:#ccc
@@ -257,7 +257,7 @@ erDiagram
 graph LR
     S0[✓ Skeleton<br>+ Hooks]
     S1[✓ MCP<br>Server]
-    S2[► Data<br>Layer]
+    S2[✓ Data<br>Layer]
     S3[Retrieval]
     S4[Validation]
     S5[Onboarding]
@@ -270,8 +270,8 @@ graph LR
 
     style S0 fill:#C8E6C9,stroke:#2E7D32
     style S1 fill:#C8E6C9,stroke:#2E7D32
-    style S2 fill:#FFF9C4,stroke:#F57F17
-    style S3 fill:#f5f5f5,stroke:#bbb
+    style S2 fill:#C8E6C9,stroke:#2E7D32
+    style S3 fill:#FFF9C4,stroke:#F57F17
     style S4 fill:#f5f5f5,stroke:#bbb
     style S5 fill:#f5f5f5,stroke:#bbb
     style S6 fill:#f5f5f5,stroke:#bbb
