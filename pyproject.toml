@@ -12,6 +12,7 @@ dependencies = [
     "pgvector>=0.2",
     "openai>=1.0",
     "rank-bm25>=0.2",
+    "psutil>=5.9",
 ]
 
 [project.optional-dependencies]
