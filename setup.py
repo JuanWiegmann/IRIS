@@ -28,8 +28,9 @@ import os
 import subprocess
 import sys
 import time
+import psutil
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 
 # ═══════════════════════════════════════════════════════════
@@ -71,6 +72,103 @@ def get_claude_config_path() -> Path:
 def get_kim_root() -> Path:
     """Get KIM repository root (where this script lives)."""
     return Path(__file__).parent.absolute()
+
+
+def is_claude_code_running() -> bool:
+    """
+    Check if Claude Code is currently running.
+
+    Returns:
+        True if Claude Code process is running, False otherwise
+    """
+    try:
+        for proc in psutil.process_iter(['name', 'exe']):
+            try:
+                name = proc.info['name']
+                if name and 'claude' in name.lower():
+                    # Check for Claude desktop app
+                    if 'claude' in name.lower() or 'Claude' in str(proc.info.get('exe', '')):
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        return False
+    except Exception:
+        # If psutil fails, assume not running
+        return False
+
+
+def close_claude_code_prompt():
+    """
+    Prompt user to close Claude Code if it's running.
+
+    Returns:
+        True if user confirms closed, False to abort
+    """
+    print()
+    print("⚠️  IMPORTANT: Claude Code is currently running!")
+    print()
+    print("Claude Code must be closed to update its configuration.")
+    print()
+    print("Please:")
+    print("  1. Close Claude Code completely")
+    print("  2. Come back here and press Enter to continue")
+    print()
+
+    response = input("Press Enter when Claude Code is closed (or 'q' to abort): ").strip().lower()
+
+    if response == 'q':
+        print("❌ Setup aborted by user")
+        return False
+
+    # Check again
+    if is_claude_code_running():
+        print("⚠️  Claude Code still appears to be running")
+        print("    Please close it and try again")
+        return False
+
+    print("✅ Claude Code closed, continuing setup...")
+    return True
+
+
+def launch_claude_code() -> bool:
+    """
+    Attempt to launch Claude Code application.
+
+    Returns:
+        True if launch attempted, False if not found
+    """
+    try:
+        if sys.platform == "win32":
+            # Windows: Try to find Claude Code in common locations
+            possible_paths = [
+                Path(os.getenv("LOCALAPPDATA", "")) / "Programs" / "claude" / "Claude.exe",
+                Path(os.getenv("PROGRAMFILES", "")) / "Claude" / "Claude.exe",
+                Path(os.getenv("PROGRAMFILES(X86)", "")) / "Claude" / "Claude.exe",
+            ]
+
+            for path in possible_paths:
+                if path.exists():
+                    subprocess.Popen([str(path)], shell=True)
+                    return True
+
+        elif sys.platform == "darwin":
+            # macOS: Use open command
+            subprocess.Popen(["open", "-a", "Claude"])
+            return True
+
+        else:
+            # Linux: Try common executable names
+            for cmd in ["claude", "claude-code", "claude-desktop"]:
+                try:
+                    subprocess.Popen([cmd])
+                    return True
+                except FileNotFoundError:
+                    continue
+
+        return False
+
+    except Exception:
+        return False
 
 
 # ═══════════════════════════════════════════════════════════
@@ -535,11 +633,19 @@ def main():
     print("  • Mendix CLI check (low-code development)")
     print("  • All MCP server registrations")
     print("  • Testing and verification")
+    print("  • Automatic Claude Code restart")
     print()
 
     kim_root = get_kim_root()
     print(f"📁 KIM location: {kim_root}")
     print()
+
+    # Check if Claude Code is running
+    claude_was_running = is_claude_code_running()
+    if claude_was_running:
+        print("🔍 Detected: Claude Code is currently running")
+        if not close_claude_code_prompt():
+            sys.exit(0)  # User aborted
 
     # Backup existing config
     config_path = get_claude_config_path()
@@ -635,7 +741,60 @@ def main():
 
         print()
         print("=" * 70)
-        print("🎉 Ready to use KIM! Restart Claude Code to begin.")
+        print("🎉 KIM IS READY!")
+        print("=" * 70)
+        print()
+
+        # Auto-launch Claude Code
+        if claude_was_running:
+            print("🚀 Restarting Claude Code...")
+            print()
+
+            response = input("Launch Claude Code now? (Y/n): ").strip().lower()
+
+            if response != 'n':
+                if launch_claude_code():
+                    print("✅ Claude Code launching...")
+                    print()
+                    print("📌 WAIT: Give Claude Code 5-10 seconds to start")
+                    print("📌 THEN: Ask 'What MCP tools are available?'")
+                    print("📌 YOU SHOULD SEE: get_context, log_output, check_draft")
+                else:
+                    print("⚠️  Could not auto-launch Claude Code")
+                    print("    Please launch it manually")
+            else:
+                print("⏭️  Skipped auto-launch")
+                print("    Launch Claude Code manually when ready")
+        else:
+            print("📌 IMPORTANT: Launch Claude Code")
+            print()
+            print("Claude Code was not running before setup.")
+            print("You need to launch it now to use KIM.")
+            print()
+
+            response = input("Launch Claude Code now? (Y/n): ").strip().lower()
+
+            if response != 'n':
+                if launch_claude_code():
+                    print("✅ Claude Code launching...")
+                    print()
+                    print("📌 WAIT: Give Claude Code 5-10 seconds to start")
+                    print("📌 THEN: Ask 'What MCP tools are available?'")
+                    print("📌 YOU SHOULD SEE: get_context, log_output, check_draft")
+                else:
+                    print("⚠️  Could not auto-launch Claude Code")
+                    print("    Please launch it manually")
+            else:
+                print("⏭️  Skipped auto-launch")
+                print()
+                print("To use KIM:")
+                print("  1. Launch Claude Code")
+                print("  2. Wait for startup (5-10 seconds)")
+                print("  3. Ask: 'What MCP tools are available?'")
+
+        print()
+        print("=" * 70)
+        print("✅ Setup complete! KIM server will auto-start with Claude Code.")
         print("=" * 70)
 
     except Exception as e:
