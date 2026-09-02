@@ -22,6 +22,8 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 from src.profile import get_or_create_profile, format_profile_for_llm
+from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
+from src.tools.log_output import get_log_output_tool, handle_log_output
 
 
 # ═══════════════════════════════════════════════════════════
@@ -63,7 +65,8 @@ async def list_tools() -> list[Tool]:
                 },
                 "required": ["query"]
             }
-        )
+        ),
+        get_log_output_tool()
     ]
 
 
@@ -81,6 +84,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """
     if name == "get_context":
         return await handle_get_context(arguments)
+
+    if name == "log_output":
+        # TODO: Get user_id from MCP session context
+        demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
+        return await handle_log_output(arguments, demo_user_id)
 
     raise ValueError(f"Unknown tool: {name}")
 
@@ -114,22 +122,30 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     # Format profile as markdown for LLM
     profile_text = format_profile_for_llm(profile)
 
+    # Retrieve relevant past outputs (Segment 3)
+    # Learning: learning/06_memory/README.md#hybrid-retrieval
+    try:
+        relevant_outputs = await retrieve_relevant_outputs(
+            user_id=demo_user_id,
+            query=query,
+            top_k=5
+        )
+        outputs_text = format_outputs_for_llm(relevant_outputs)
+    except Exception:
+        # No outputs yet, or retrieval failed
+        outputs_text = "*(No past outputs stored yet)*"
+
     # Build full context response
     response = f"""# Personalized Context for: "{query}"
 
 {profile_text}
 
 ## Relevant Past Outputs
-*(Segment 3 - Retrieval engine not yet implemented)*
-
-Will include:
-- Past outputs ranked by relevance to current query
-- Most-relevant-first ordering (Wu et al. 2024)
-- BM25 + vector similarity hybrid ranking
+{outputs_text}
 
 ---
-*Profile loaded from: ~/.kim/data/profiles/{profile.id}.json*
-*Next: Segment 3 will add retrieval engine*
+*Profile loaded from: ~/.kim/profiles/{profile.id}.json*
+*Retrieval: Hybrid BM25 + vector similarity (Wu et al. 2024)*
 """
 
     return [

@@ -18,10 +18,9 @@ from src.profile.schema import (
     format_profile_for_llm,
 )
 
-from src.profile.store import (
-    ProfileStore,
+from src.storage.file_store import (
     get_or_create_profile,
-    get_default_store,
+    get_profile_store,
 )
 
 __all__ = [
@@ -32,7 +31,6 @@ __all__ = [
     "create_default_profile",
     "format_profile_for_llm",
     # Store
-    "ProfileStore",
     "get_or_create_profile",
-    "get_default_store",
+    "get_profile_store",
 ]
