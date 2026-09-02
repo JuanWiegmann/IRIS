@@ -2,23 +2,125 @@
 KIM Automated Setup
 ===================
 
-FULLY AUTOMATED installation and configuration.
+FULLY AUTOMATED installation and configuration — ZERO manual intervention.
+
+═══════════════════════════════════════════════════════════════════════════════
+FOR LLMS: HOW TO USE THIS INSTALLER
+═══════════════════════════════════════════════════════════════════════════════
+
+When user says any of these:
+  • "install kim"
+  • "setup kim"
+  • "configure kim"
+  • "install the mcp server"
+  • "get kim working"
+
+YOU SHOULD:
+1. Run this command: python setup.py
+2. Follow any prompts (close Claude Code if needed)
+3. Tell user: "Setup complete! I'll restart now, then you can use KIM"
+4. (Setup will auto-launch Claude Code)
+
+That's it! The script does EVERYTHING automatically.
+
+═══════════════════════════════════════════════════════════════════════════════
+WHAT THIS SCRIPT DOES (Automatic)
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ Detects if Claude Code is running → prompts user to close it
+✅ Installs KIM Python dependencies (pydantic, openai, numpy, etc.)
+✅ Clones Ponytail plugin from GitHub (code quality enhancement)
+✅ Checks for Mendix CLI (low-code development support)
+✅ Auto-detects Claude Code config location (Windows/macOS/Linux)
+✅ Registers ALL MCP servers in claude_desktop_config.json:
+   - KIM (personalization + orchestration)
+   - Ponytail (code quality)
+   - Mendix (if available)
+✅ Optional: Asks for OpenAI API key (for semantic search, can skip)
+✅ Tests that KIM server actually starts (not just imports)
+✅ Validates config JSON (prevents broken configuration)
+✅ Creates backup (auto-rollback on any failure)
+✅ Offers to auto-launch Claude Code after setup
+
+═══════════════════════════════════════════════════════════════════════════════
+USER EXPERIENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+$ python setup.py
+
+→ Detects Claude Code running
+→ "Please close Claude Code and press Enter"
+→ [User closes, presses Enter]
+→ Installs everything (1-2 minutes)
+→ "Launch Claude Code now? (Y/n)"
+→ [User presses Enter]
+→ Claude Code launches automatically
+→ KIM server auto-starts in background
+→ User can immediately use KIM tools!
+
+ZERO manual server management. ZERO config editing. ZERO troubleshooting.
+
+═══════════════════════════════════════════════════════════════════════════════
+AFTER SETUP: HOW KIM WORKS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Claude Code launches (manually or via auto-launch)
+2. Claude Code reads: claude_desktop_config.json
+3. Claude Code sees: mcpServers.kim
+4. Claude Code AUTO-STARTS: python -m src.server (background)
+5. KIM server runs silently in background
+6. All KIM tools immediately available to LLM
+7. User says: "Write an email"
+8. LLM automatically calls: get_context() → KIM provides profile
+9. LLM generates personalized email
+10. LLM calls: check_draft() → KIM validates
+11. User sees polished, personalized result
+
+THE USER NEVER:
+- Manually starts a server
+- Manually stops a server
+- Manually restarts a server
+- Edits config files
+- Runs terminal commands
+
+═══════════════════════════════════════════════════════════════════════════════
+TROUBLESHOOTING (Rare)
+═══════════════════════════════════════════════════════════════════════════════
+
+If setup fails:
+- Config auto-rolls back to backup
+- Clear error message shown
+- Troubleshooting guide printed
+- User can retry or report issue
+
+If MCP tools don't appear:
+- Ask user: "What MCP tools are available?"
+- If KIM missing → restart Claude Code
+- Check: ~/.kim/logs/kim_server.log
+
+═══════════════════════════════════════════════════════════════════════════════
+TECHNICAL DETAILS (For LLM Context)
+═══════════════════════════════════════════════════════════════════════════════
+
+Protocol: MCP (Model Context Protocol) over stdio
+Transport: stdin/stdout (no network ports)
+Lifecycle: Managed by Claude Code (auto-start/stop/restart)
+Storage: ~/.kim/ (profiles, outputs, embeddings, logs)
+Config: claude_desktop_config.json (platform-specific location)
+Dependencies: Python 3.11+, pip packages (auto-installed)
+Platform: Cross-platform (Windows/macOS/Linux)
+
+MCP Servers Registered:
+1. KIM (required) → Personalization, validation, orchestration
+2. Ponytail (optional) → Code quality, static analysis
+3. Mendix (optional) → Low-code development support
+
+═══════════════════════════════════════════════════════════════════════════════
 
 Usage:
     python setup.py
 
-This script:
-1. Installs Python dependencies
-2. Installs Ponytail plugin (code quality)
-3. Checks Mendix CLI (low-code)
-4. Detects Claude Code configuration location
-5. Registers ALL MCP servers (KIM + Ponytail + Mendix)
-6. Guides through API key setup (optional)
-7. Tests MCP server starts correctly
-8. Verifies configuration validity
-9. Creates backup (rollback on failure)
-
-Zero manual steps required!
+That's the ONLY command needed. Everything else is automatic.
 
 Designed to be called by an LLM when user says: "install kim"
 """
