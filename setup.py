@@ -2,17 +2,23 @@
 KIM Automated Setup
 ===================
 
-One-command installation and configuration.
+FULLY AUTOMATED installation and configuration.
 
 Usage:
     python setup.py
 
 This script:
 1. Installs Python dependencies
-2. Detects Claude Code configuration location
-3. Registers KIM as MCP server
-4. Guides through API key setup
-5. Tests the connection
+2. Installs Ponytail plugin (code quality)
+3. Checks Mendix CLI (low-code)
+4. Detects Claude Code configuration location
+5. Registers ALL MCP servers (KIM + Ponytail + Mendix)
+6. Guides through API key setup (optional)
+7. Tests MCP server starts correctly
+8. Verifies configuration validity
+9. Creates backup (rollback on failure)
+
+Zero manual steps required!
 
 Designed to be called by an LLM when user says: "install kim"
 """
@@ -21,7 +27,9 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
+from typing import Optional, Tuple
 
 
 # ═══════════════════════════════════════════════════════════
@@ -205,22 +213,138 @@ def setup_api_key() -> str:
 # VERIFICATION
 # ═══════════════════════════════════════════════════════════
 
-def verify_installation():
-    """Test that KIM can start."""
-    print("\n🧪 Testing KIM server...")
+def test_kim_server_startup():
+    """
+    Test that KIM server can actually start.
+
+    Returns:
+        True if server starts successfully, False otherwise
+    """
+    print("\n🧪 Testing KIM server startup...")
+
+    kim_root = get_kim_root()
 
     try:
-        # Try importing key modules
-        from src.profile import get_or_create_profile
-        from src.retrieval import embed_text
-        from src.validation import detect_use_case
+        # Start server in background
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "src.server"],
+            cwd=kim_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-        print("✅ All modules import successfully")
-        return True
+        # Wait 3 seconds for startup
+        time.sleep(3)
 
-    except ImportError as e:
-        print(f"❌ Import failed: {e}")
+        # Check if still running
+        if proc.poll() is None:
+            print("✅ KIM server started successfully")
+            proc.terminate()
+            proc.wait(timeout=5)
+            return True
+        else:
+            stdout, stderr = proc.communicate()
+            print(f"❌ Server failed to start")
+            print(f"   Error: {stderr[:200]}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Server test failed: {e}")
+        try:
+            proc.terminate()
+        except:
+            pass
         return False
+
+
+def verify_installation():
+    """
+    Comprehensive verification of installation.
+
+    Tests:
+    1. Module imports
+    2. Server startup
+    3. Storage directories
+
+    Returns:
+        True if all tests pass, False otherwise
+    """
+    print("\n🔍 Verifying installation...")
+
+    # Test 1: Module imports
+    print("  📦 Testing module imports...")
+    try:
+        from src.profile import get_or_create_profile
+        from src.retrieval.hybrid import retrieve_relevant_outputs
+        from src.validation.use_case_detector import detect_use_case
+        from src.validation.deterministic import get_messaging_validator
+        print("     ✅ All modules import successfully")
+    except ImportError as e:
+        print(f"     ❌ Import failed: {e}")
+        return False
+
+    # Test 2: Storage directories
+    print("  📁 Testing storage setup...")
+    home = Path.home()
+    kim_dir = home / ".kim"
+    required_dirs = [
+        kim_dir,
+        kim_dir / "profiles",
+        kim_dir / "outputs",
+        kim_dir / "embeddings",
+        kim_dir / "logs"
+    ]
+
+    for dir_path in required_dirs:
+        dir_path.mkdir(parents=True, exist_ok=True)
+    print("     ✅ Storage directories ready")
+
+    # Test 3: Server startup
+    if not test_kim_server_startup():
+        return False
+
+    print("✅ All verification tests passed!")
+    return True
+
+
+def backup_config(config_path: Path) -> Optional[Path]:
+    """
+    Create backup of Claude Code config.
+
+    Args:
+        config_path: Path to config file
+
+    Returns:
+        Path to backup file, or None if backup failed
+    """
+    if not config_path.exists():
+        return None
+
+    backup_path = config_path.with_suffix('.json.backup')
+    try:
+        import shutil
+        shutil.copy2(config_path, backup_path)
+        return backup_path
+    except Exception as e:
+        print(f"⚠️  Warning: Could not create backup: {e}")
+        return None
+
+
+def restore_config(config_path: Path, backup_path: Path):
+    """
+    Restore config from backup.
+
+    Args:
+        config_path: Path to config file
+        backup_path: Path to backup file
+    """
+    try:
+        import shutil
+        shutil.copy2(backup_path, config_path)
+        print(f"✅ Configuration restored from backup")
+    except Exception as e:
+        print(f"❌ Failed to restore backup: {e}")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -377,81 +501,172 @@ def register_all_mcp_servers(api_key: str = None, ponytail_dir: Path = None):
         return False
 
 
+def validate_config_json(config_path: Path) -> bool:
+    """
+    Validate Claude Code config JSON.
+
+    Args:
+        config_path: Path to config file
+
+    Returns:
+        True if valid, False otherwise
+    """
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            json.load(f)
+        return True
+    except json.JSONDecodeError as e:
+        print(f"❌ Invalid JSON in config: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Error reading config: {e}")
+        return False
+
+
 def main():
-    """Main setup flow."""
-    print("=" * 60)
-    print("🚀 KIM Automated Setup")
-    print("=" * 60)
+    """Main setup flow with full automation and rollback."""
+    print("=" * 70)
+    print("🚀 KIM FULLY AUTOMATED SETUP")
+    print("=" * 70)
+    print()
+    print("This will install and configure:")
+    print("  • KIM MCP server (personalization + orchestration)")
+    print("  • Ponytail plugin (code quality)")
+    print("  • Mendix CLI check (low-code development)")
+    print("  • All MCP server registrations")
+    print("  • Testing and verification")
     print()
 
     kim_root = get_kim_root()
     print(f"📁 KIM location: {kim_root}")
     print()
 
-    # Step 1: Install KIM dependencies
-    print("═══ Installing KIM ═══")
-    if not install_dependencies():
-        print("\n❌ Setup failed at dependency installation")
-        sys.exit(1)
-
-    # Step 2: API key setup
-    api_key = setup_api_key()
-
-    # Step 3: Install recommended plugins
-    print("\n═══ Installing Recommended Plugins ═══")
-    ponytail_installed, ponytail_dir = install_ponytail()
-    mendix_installed = install_mendix_cli()
-
-    # Step 4: Register all MCP servers
-    if not register_all_mcp_servers(api_key, ponytail_dir):
-        print("\n❌ Setup failed at MCP configuration")
-        sys.exit(1)
-
-    # Step 5: Verify installation
-    if not verify_installation():
-        print("\n❌ Setup failed at verification")
-        sys.exit(1)
-
-    # Success!
-    print("\n" + "=" * 60)
-    print("✅ KIM Setup Complete!")
-    print("=" * 60)
-    print()
-    print("📦 Installed:")
-    print(f"   ✅ KIM MCP server")
-    if ponytail_installed:
-        print(f"   ✅ Ponytail plugin (code quality)")
-    if mendix_installed:
-        print(f"   ✅ Mendix CLI (low-code)")
-    print()
-    print("📋 Next Steps:")
-    print("1. Restart Claude Code (close and reopen)")
-    print("2. Ask: 'What MCP tools are available?'")
-    print("3. You should see:")
-    print("   - KIM: get_context, log_output, check_draft")
-    if ponytail_installed:
-        print("   - Ponytail: code quality tools")
-    print()
-    print("💡 How It Works:")
-    print("   • KIM detects when you're writing code")
-    print("   • KIM tells Claude: 'validate using available tools'")
-    if ponytail_installed:
-        print("   • Claude uses Ponytail automatically")
-    print("   • You get better code quality!")
-    print()
-    print("📊 Monitor KIM:")
-    print(f"   python -m src.log_viewer --follow")
-    print()
-    print("📖 Full Documentation:")
-    print(f"   {kim_root / 'SETUP_MCP.md'}")
-    print()
-
-    if not api_key:
-        config_path = get_claude_config_path()
-        print("💡 Optional: Add OpenAI API key for semantic search")
-        print(f"   Edit: {config_path}")
-        print("   (Add OPENAI_API_KEY to env section)")
+    # Backup existing config
+    config_path = get_claude_config_path()
+    backup_path = backup_config(config_path)
+    if backup_path:
+        print(f"💾 Config backed up to: {backup_path}")
         print()
+
+    try:
+        # Step 1: Install KIM dependencies
+        print("═══ Step 1/6: Installing KIM Dependencies ═══")
+        if not install_dependencies():
+            raise Exception("Dependency installation failed")
+
+        # Step 2: API key setup
+        print("\n═══ Step 2/6: API Key Setup ═══")
+        api_key = setup_api_key()
+
+        # Step 3: Install recommended plugins
+        print("\n═══ Step 3/6: Installing Plugins ═══")
+        ponytail_installed, ponytail_dir = install_ponytail()
+        mendix_installed = install_mendix_cli()
+
+        # Step 4: Register all MCP servers
+        print("\n═══ Step 4/6: Registering MCP Servers ═══")
+        if not register_all_mcp_servers(api_key, ponytail_dir):
+            raise Exception("MCP server registration failed")
+
+        # Step 5: Validate configuration
+        print("\n═══ Step 5/6: Validating Configuration ═══")
+        if not validate_config_json(config_path):
+            raise Exception("Configuration validation failed")
+        print("✅ Configuration JSON is valid")
+
+        # Step 6: Verify installation
+        print("\n═══ Step 6/6: Verifying Installation ═══")
+        if not verify_installation():
+            raise Exception("Installation verification failed")
+
+        # Success!
+        print("\n" + "=" * 70)
+        print("✅ KIM SETUP COMPLETE!")
+        print("=" * 70)
+        print()
+        print("📦 Successfully Installed:")
+        print(f"   ✅ KIM MCP server → {kim_root}")
+        if ponytail_installed:
+            print(f"   ✅ Ponytail plugin → {ponytail_dir}")
+        if mendix_installed:
+            print(f"   ✅ Mendix CLI (detected)")
+        print()
+        print(f"⚙️  Configuration:")
+        print(f"   ✅ Registered in: {config_path}")
+        print(f"   ✅ Server tested and working")
+        print(f"   ✅ Storage directories created")
+        print()
+        print("📋 NEXT STEPS:")
+        print()
+        print("1️⃣  RESTART Claude Code")
+        print("    → Close completely and reopen")
+        print()
+        print("2️⃣  TEST MCP Tools")
+        print('    → Ask: "What MCP tools are available?"')
+        print("    → Expected:")
+        print("      • KIM: get_context, log_output, check_draft")
+        if ponytail_installed:
+            print("      • Ponytail: code quality tools")
+        print()
+        print("3️⃣  TRY KIM")
+        print('    → Say: "Write a Python function"')
+        print("    → KIM validates + Ponytail enhances!")
+        print()
+        print("📊 Monitor KIM Logs:")
+        print(f"   python -m src.log_viewer --follow")
+        print()
+        print("📖 Documentation:")
+        print(f"   README:       {kim_root / 'README.md'}")
+        print(f"   Setup Guide:  {kim_root / 'SETUP_MCP.md'}")
+        print(f"   Architecture: {kim_root / 'ARCHITECTURE.md'}")
+        print()
+
+        if not api_key:
+            print("💡 OPTIONAL: Add OpenAI API Key Later")
+            print("   For semantic search of past outputs")
+            print(f"   Edit: {config_path}")
+            print("   Add OPENAI_API_KEY to kim.env section")
+            print()
+
+        # Delete backup on success
+        if backup_path and backup_path.exists():
+            backup_path.unlink()
+            print("🧹 Cleanup: Backup removed (setup successful)")
+
+        print()
+        print("=" * 70)
+        print("🎉 Ready to use KIM! Restart Claude Code to begin.")
+        print("=" * 70)
+
+    except Exception as e:
+        # Rollback on failure
+        print()
+        print("=" * 70)
+        print(f"❌ SETUP FAILED: {e}")
+        print("=" * 70)
+        print()
+
+        if backup_path and backup_path.exists():
+            print("🔄 Rolling back configuration...")
+            restore_config(config_path, backup_path)
+            backup_path.unlink()
+
+        print()
+        print("💡 TROUBLESHOOTING:")
+        print("   1. Check error message above")
+        print("   2. Verify Python 3.11+ installed: python --version")
+        print("   3. Check network connectivity")
+        print("   4. Try manual setup: see SETUP_MCP.md")
+        print()
+        print("📋 Common Issues:")
+        print("   • Dependency errors → Update pip: python -m pip install --upgrade pip")
+        print("   • Git clone fails → Check proxy/firewall settings")
+        print("   • Server won't start → Check logs: ~/.kim/logs/kim_server.log")
+        print()
+        print(f"📧 Report issues: https://github.com/JuanWiegmann/KIM/issues")
+        print()
+
+        sys.exit(1)
 
 
 if __name__ == "__main__":
