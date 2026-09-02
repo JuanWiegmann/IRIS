@@ -23,17 +23,30 @@ python -m src.inspect
 
 ---
 
-## Step 2: Set OpenAI API Key
+## Step 2: Set OpenAI API Key (OPTIONAL)
 
+**⚠️ THIS IS OPTIONAL!**
+
+KIM works WITHOUT an OpenAI API key:
+- ✅ Validation works (uses YOUR LLM via MCP)
+- ✅ Draft checking works (deterministic rules)
+- ✅ Profile storage works
+
+**OpenAI is ONLY needed for:**
+- Semantic search of past outputs (embeddings)
+- Without it: Retrieval uses BM25 keyword search (still functional!)
+
+**If you want semantic search:**
 ```bash
 # Windows (PowerShell)
 $env:OPENAI_API_KEY = "sk-your-key-here"
 
-# OR create .env file in KIM directory
-echo OPENAI_API_KEY=sk-your-key-here > .env
+# OR add to Claude Code config (see Step 3)
 ```
 
 **Get API key:** https://platform.openai.com/api-keys
+
+**Skip this step:** KIM works fine without it!
 
 ---
 

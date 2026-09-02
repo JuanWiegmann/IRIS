@@ -36,11 +36,22 @@ python setup.py
 python -m pip install -e .
 ```
 
-### 3. Configure API Key
+### 3. Configure API Key (OPTIONAL)
 
-Get your OpenAI API key: https://platform.openai.com/api-keys
+**OpenAI API key is OPTIONAL!**
 
-The setup script will ask for it, or add manually to Claude Code config.
+KIM works WITHOUT it:
+- ✅ Validation (uses your LLM via MCP)
+- ✅ Draft checking
+- ✅ Profile storage
+
+**Only needed for:** Semantic search of past outputs (embeddings)
+
+**Without key:** Retrieval uses BM25 keyword search only (still works!)
+
+**Get key (optional):** https://platform.openai.com/api-keys
+
+The setup script will ask, or press Enter to skip.
 
 ### 4. Restart Claude Code
 

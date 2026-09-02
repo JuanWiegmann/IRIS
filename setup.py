@@ -158,12 +158,24 @@ def setup_api_key() -> str:
     Returns:
         API key or empty string if skipped
     """
-    print("\n🔑 OpenAI API Key Setup")
+    print("\n🔑 OpenAI API Key Setup (OPTIONAL)")
     print("=" * 60)
-    print("KIM uses OpenAI for embeddings (text-embedding-3-small)")
-    print("Cost: ~$0.02 per 1M tokens (very cheap)")
+    print("⚠️  OpenAI API key is OPTIONAL!")
     print()
-    print("Get your API key: https://platform.openai.com/api-keys")
+    print("KIM works WITHOUT an API key:")
+    print("  ✅ Validation (deterministic + MCP sampling)")
+    print("  ✅ Draft checking (uses YOUR LLM via MCP)")
+    print("  ✅ Profile storage")
+    print()
+    print("OpenAI is ONLY needed for:")
+    print("  📊 Embeddings (semantic search of past outputs)")
+    print("  💰 Cost: ~$0.02 per 1M tokens (very cheap)")
+    print()
+    print("Without API key:")
+    print("  - Validation still works (no OpenAI needed)")
+    print("  - Retrieval uses BM25 only (keyword search, no semantic)")
+    print()
+    print("Get key (if you want embeddings): https://platform.openai.com/api-keys")
     print()
 
     # Check if already set in environment
