@@ -227,6 +227,156 @@ def verify_installation():
 # MAIN SETUP FLOW
 # ═══════════════════════════════════════════════════════════
 
+def install_ponytail():
+    """
+    Install Ponytail plugin for code quality.
+
+    Returns:
+        True if installed/already present, False if failed
+    """
+    print("\n🦄 Installing Ponytail (code quality plugin)...")
+
+    try:
+        # Check if Ponytail repo exists
+        kim_root = get_kim_root()
+        ponytail_dir = kim_root.parent / "ponytail"
+
+        if ponytail_dir.exists():
+            print(f"✅ Ponytail already cloned at: {ponytail_dir}")
+        else:
+            print("📥 Cloning Ponytail from GitHub...")
+            subprocess.run(
+                ["git", "clone", "https://github.com/DietrichGebert/ponytail.git", str(ponytail_dir)],
+                check=True,
+                capture_output=True
+            )
+            print(f"✅ Ponytail cloned to: {ponytail_dir}")
+
+        # Install Ponytail dependencies
+        if (ponytail_dir / "requirements.txt").exists():
+            print("📦 Installing Ponytail dependencies...")
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
+                cwd=ponytail_dir,
+                check=True,
+                capture_output=True
+            )
+
+        return True, ponytail_dir
+
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  Failed to install Ponytail: {e.stderr.decode() if e.stderr else str(e)}")
+        print("   Skipping Ponytail (optional)")
+        return False, None
+    except Exception as e:
+        print(f"⚠️  Ponytail installation error: {e}")
+        print("   Skipping Ponytail (optional)")
+        return False, None
+
+
+def install_mendix_cli():
+    """
+    Install Mendix CLI for low-code development.
+
+    Returns:
+        True if installed/available, False otherwise
+    """
+    print("\n🏗️  Checking Mendix CLI...")
+
+    try:
+        # Check if mx command exists
+        result = subprocess.run(
+            ["mx", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0:
+            print(f"✅ Mendix CLI already installed: {result.stdout.strip()}")
+            return True
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    print("⚠️  Mendix CLI not found")
+    print("   Note: Mendix CLI is BETA software")
+    print("   KIM will validate Mendix content without it")
+    print("   Install manually: https://docs.mendix.com/refguide/mx-command-line-tool/")
+    print("   Skipping (optional)")
+    return False
+
+
+def register_all_mcp_servers(api_key: str = None, ponytail_dir: Path = None):
+    """
+    Register KIM + Ponytail + Mendix as MCP servers.
+
+    Args:
+        api_key: OpenAI API key (optional)
+        ponytail_dir: Path to Ponytail directory (if installed)
+    """
+    print("\n🔧 Configuring Claude Code MCP servers...")
+
+    try:
+        config_path = get_claude_config_path()
+        kim_root = get_kim_root()
+
+        # Load existing config or create new
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+        else:
+            config = {}
+
+        # Ensure mcpServers key exists
+        if "mcpServers" not in config:
+            config["mcpServers"] = {}
+
+        # Register KIM
+        kim_config = {
+            "command": sys.executable,
+            "args": ["-m", "src.server"],
+            "cwd": str(kim_root),
+            "env": {
+                "KIM_LOG_LEVEL": "INFO"
+            }
+        }
+        if api_key:
+            kim_config["env"]["OPENAI_API_KEY"] = api_key
+
+        config["mcpServers"]["kim"] = kim_config
+        print("  ✅ KIM registered")
+
+        # Register Ponytail (if installed)
+        if ponytail_dir and ponytail_dir.exists():
+            # Check for server.py or main.py in Ponytail
+            ponytail_entry = None
+            if (ponytail_dir / "server.py").exists():
+                ponytail_entry = "server.py"
+            elif (ponytail_dir / "src" / "server.py").exists():
+                ponytail_entry = str(Path("src") / "server.py")
+
+            if ponytail_entry:
+                config["mcpServers"]["ponytail"] = {
+                    "command": sys.executable,
+                    "args": ["-m", ponytail_entry.replace(".py", "").replace(os.sep, ".")],
+                    "cwd": str(ponytail_dir)
+                }
+                print("  ✅ Ponytail registered")
+            else:
+                print("  ⚠️  Ponytail structure unknown, skipping registration")
+
+        # Write config
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+
+        print(f"✅ MCP servers registered in: {config_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Failed to configure MCP: {e}")
+        return False
+
+
 def main():
     """Main setup flow."""
     print("=" * 60)
@@ -238,7 +388,8 @@ def main():
     print(f"📁 KIM location: {kim_root}")
     print()
 
-    # Step 1: Install dependencies
+    # Step 1: Install KIM dependencies
+    print("═══ Installing KIM ═══")
     if not install_dependencies():
         print("\n❌ Setup failed at dependency installation")
         sys.exit(1)
@@ -246,12 +397,17 @@ def main():
     # Step 2: API key setup
     api_key = setup_api_key()
 
-    # Step 3: Register MCP server
-    if not register_mcp_server(api_key):
+    # Step 3: Install recommended plugins
+    print("\n═══ Installing Recommended Plugins ═══")
+    ponytail_installed, ponytail_dir = install_ponytail()
+    mendix_installed = install_mendix_cli()
+
+    # Step 4: Register all MCP servers
+    if not register_all_mcp_servers(api_key, ponytail_dir):
         print("\n❌ Setup failed at MCP configuration")
         sys.exit(1)
 
-    # Step 4: Verify installation
+    # Step 5: Verify installation
     if not verify_installation():
         print("\n❌ Setup failed at verification")
         sys.exit(1)
@@ -261,10 +417,27 @@ def main():
     print("✅ KIM Setup Complete!")
     print("=" * 60)
     print()
+    print("📦 Installed:")
+    print(f"   ✅ KIM MCP server")
+    if ponytail_installed:
+        print(f"   ✅ Ponytail plugin (code quality)")
+    if mendix_installed:
+        print(f"   ✅ Mendix CLI (low-code)")
+    print()
     print("📋 Next Steps:")
     print("1. Restart Claude Code (close and reopen)")
     print("2. Ask: 'What MCP tools are available?'")
-    print("3. You should see: get_context, log_output, check_draft")
+    print("3. You should see:")
+    print("   - KIM: get_context, log_output, check_draft")
+    if ponytail_installed:
+        print("   - Ponytail: code quality tools")
+    print()
+    print("💡 How It Works:")
+    print("   • KIM detects when you're writing code")
+    print("   • KIM tells Claude: 'validate using available tools'")
+    if ponytail_installed:
+        print("   • Claude uses Ponytail automatically")
+    print("   • You get better code quality!")
     print()
     print("📊 Monitor KIM:")
     print(f"   python -m src.log_viewer --follow")
@@ -275,8 +448,8 @@ def main():
 
     if not api_key:
         config_path = get_claude_config_path()
-        print("⚠️  Remember to add your OpenAI API key to:")
-        print(f"   {config_path}")
+        print("💡 Optional: Add OpenAI API key for semantic search")
+        print(f"   Edit: {config_path}")
         print("   (Add OPENAI_API_KEY to env section)")
         print()
 

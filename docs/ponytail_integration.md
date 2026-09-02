@@ -2,27 +2,40 @@
 
 ## Overview
 
-**Ponytail** is a code quality plugin for Claude Code that enhances validation.
+**Ponytail** is a code quality plugin that runs as a separate MCP server alongside KIM.
 
 - **Repository:** https://github.com/DietrichGebert/ponytail.git
-- **Purpose:** Better code editing, validation, quality checks
-- **Use in KIM:** Validate coding and Mendix outputs via MCP sampling
+- **Purpose:** Code editing, validation, quality checks
+- **Use in KIM:** KIM detects code, recommends validation, LLM uses Ponytail directly
 
 ---
 
-## Architecture: KIM ↔ Ponytail Flow
+## Architecture: KIM Orchestrates, LLM Uses Tools
 
 ```
-User → Claude Code (with Ponytail) → MCP → KIM
-
-KIM detects: "This is CODE"
-KIM → (via MCP sampling) → Claude Code
-Claude Code uses Ponytail to validate code quality
-Claude Code → KIM: validation result
-KIM → User's LLM: combined validation feedback
+User: "Write Python code"
+  ↓
+Claude Code → KIM: check_draft(code)
+  ↓
+KIM detects: UseCase.CODING
+KIM runs: Deterministic checks (TODO, print, bare except)
+KIM returns: {
+  "deterministic_issues": [...],
+  "recommendation": "Validate code quality with available tools",
+  "tools_available": ["ponytail_validate"]
+}
+  ↓
+Claude Code sees recommendation
+Claude Code → Ponytail MCP server: validate(code)
+  ↓
+Ponytail validates and returns quality report
+  ↓
+Claude Code combines: KIM deterministic + Ponytail semantic
+  ↓
+User sees: Complete validation feedback
 ```
 
-**Key:** KIM uses **MCP sampling** to call back to the user's LLM, which has Ponytail available.
+**Key insight:** KIM is an orchestrator, not a validator. The LLM decides which tools to use based on KIM's recommendations.
 
 ---
 
@@ -30,75 +43,93 @@ KIM → User's LLM: combined validation feedback
 
 ### 1. MESSAGING (emails, documents)
 ```
-KIM Validation:
+KIM Response:
 ├─ Deterministic checks (tone, format, boundaries)
-└─ MCP sampling (semantic check: "Is this usable?")
+├─ Recommendation: "Standard validation complete"
+└─ Tools needed: None
+
+LLM Action:
+└─ Uses KIM's feedback directly (no additional tools)
 ```
 
-**No Ponytail needed** — messaging is natural language
+**No additional tools needed** — KIM's deterministic checks are sufficient
 
 ---
 
 ### 2. CODING (Python, JS, general programming)
 ```
-KIM Validation:
-├─ Deterministic checks (basic syntax patterns)
-├─ MCP sampling WITHOUT Ponytail hint
-│  └─ Ask: "Is this code correct and follows best practices?"
-└─ (Future) MCP sampling WITH Ponytail hint
-   └─ Ask: "Validate this code using available tools"
-   └─ Claude Code invokes Ponytail automatically
+KIM Response:
+├─ Deterministic checks (TODO, print, bare except, security)
+├─ Recommendation: "Validate code quality with available tools"
+└─ Tools available: ["ponytail_validate", "ponytail_analyze"]
+
+LLM Action:
+├─ Sees KIM's recommendation
+├─ Calls Ponytail: validate(code)
+└─ Combines: KIM deterministic + Ponytail semantic
 ```
 
-**Ponytail enhances** — better code quality validation
+**Ponytail provides deep analysis** — LLM uses it based on KIM's guidance
 
 ---
 
 ### 3. MENDIX (low-code development)
 ```
-KIM Validation:
-├─ Deterministic checks (Mendix patterns, XML structure)
-├─ MCP sampling: "Is this valid Mendix?"
-└─ (Future) Ponytail for Mendix code quality
+KIM Response:
+├─ Deterministic checks (entity naming, XML structure)
+├─ Recommendation: "Mendix content detected, validate structure"
+└─ Tools available: ["mendix_cli_validate"] (if installed)
+
+LLM Action:
+├─ Uses KIM's Mendix-specific feedback
+└─ Optionally: Calls Mendix CLI for validation (NOT execution)
 ```
 
-**Note:** Mendix CLI is in **beta** — advise users NOT to use it directly. Rely on validation only.
+**Note:** Mendix CLI is **beta** — KIM recommends validation only, never execution
 
 ---
 
-## MCP Sampling Implementation
+## KIM's Orchestration Response
 
-### Current (Segment 3):
-```python
-# KIM calls user's LLM in fresh context
-response = await request_sampling(
-    prompt="Validate this draft: ...",
-    model_preferences=["haiku", "sonnet"]
-)
+### check_draft Response Format:
+
+```json
+{
+  "passed": false,
+  "use_case": "coding",
+  "issues": [
+    {
+      "severity": "warning",
+      "category": "best_practice",
+      "message": "Uses print() instead of logging",
+      "suggestion": "Consider using logging module"
+    }
+  ],
+  "method": "deterministic",
+  "confidence": 0.8,
+  "recommendation": {
+    "action": "validate_with_tools",
+    "reason": "Code detected - quality analysis recommended",
+    "suggested_tools": ["ponytail_validate"],
+    "prompt": "Validate code quality: check complexity, test coverage, and best practices"
+  }
+}
 ```
 
-### Enhanced (with Ponytail awareness):
-```python
-# KIM hints that code validation would benefit from tools
-response = await request_sampling(
-    prompt=f"""Validate this code for quality and correctness.
+### How LLM Uses This:
 
-Use any available code analysis tools if applicable.
-
-Code:
-{draft}
-
-Check:
-1. Syntax correctness
-2. Logic errors
-3. Best practices
-4. Potential bugs
-""",
-    model_preferences=["sonnet"]  # Sonnet for code validation
-)
+```
+1. LLM receives KIM's response
+2. LLM sees: recommendation.action = "validate_with_tools"
+3. LLM sees: suggested_tools = ["ponytail_validate"]
+4. LLM calls: ponytail_validate(code)
+5. LLM combines results:
+   - KIM deterministic issues
+   - Ponytail semantic analysis
+6. LLM presents complete feedback to user
 ```
 
-**The LLM decides** whether to use Ponytail — KIM just provides the validation context.
+**KIM guides, LLM executes** — clean separation of concerns
 
 ---
 
@@ -253,22 +284,85 @@ validation:
 
 ---
 
+## Installation
+
+### Automated (Recommended):
+```bash
+cd KIM
+python setup.py
+
+# This installs:
+# ✅ KIM MCP server
+# ✅ Ponytail plugin (code quality)
+# ✅ Mendix CLI check (optional)
+
+# All registered as separate MCP servers
+```
+
+### Manual:
+```bash
+# Install KIM
+cd KIM
+pip install -e .
+
+# Install Ponytail
+cd ../
+git clone https://github.com/DietrichGebert/ponytail.git
+cd ponytail
+pip install -e .
+
+# Register both in claude_desktop_config.json
+```
+
+**Config file:**
+```json
+{
+  "mcpServers": {
+    "kim": {
+      "command": "python",
+      "args": ["-m", "src.server"],
+      "cwd": "C:\\path\\to\\KIM"
+    },
+    "ponytail": {
+      "command": "python",
+      "args": ["-m", "src.server"],
+      "cwd": "C:\\path\\to\\ponytail"
+    }
+  }
+}
+```
+
+---
+
 ## Summary
 
 **What KIM does:**
 1. ✅ Detect use case (messaging/coding/Mendix)
-2. ✅ Route to appropriate validator
-3. ⏳ Use MCP sampling for semantic checks
-4. ⏳ (Future) Ponytail awareness for code quality
+2. ✅ Run deterministic validation
+3. ✅ Recommend which tools LLM should use
+4. ✅ Provide structured guidance
+
+**What LLM does:**
+- Receives KIM's recommendations
+- Decides which tools to invoke
+- Calls Ponytail/Mendix directly (separate MCP servers)
+- Combines all feedback for user
 
 **What Ponytail does:**
-- Enhances code validation (when available)
-- Runs automatically via Claude Code hooks
-- KIM doesn't control Ponytail — just benefits from it
+- Runs as separate MCP server
+- Provides code quality tools
+- Used by LLM when KIM recommends it
+- Independent of KIM
 
 **What KIM does NOT do:**
-- ❌ Execute Mendix CLI (it's beta, unstable)
-- ❌ Require Ponytail (optional enhancement)
-- ❌ Force specific validation tools
+- ❌ Call Ponytail internally (LLM does this)
+- ❌ Execute Mendix CLI (recommend only)
+- ❌ Require any specific tools (graceful degradation)
+- ❌ Force tool usage (LLM decides)
 
-**Philosophy:** KIM detects intent, delegates to best validator, gracefully degrades if tools unavailable.
+**Philosophy:** 
+- **KIM = Orchestrator** (detects, validates, recommends)
+- **LLM = Executor** (decides, calls tools, combines)
+- **Ponytail/Mendix = Specialists** (domain-specific analysis)
+
+Clean separation of concerns via MCP protocol.

@@ -27,6 +27,12 @@ from src.profile import get_or_create_profile, format_profile_for_llm
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
 from src.tools.log_output import get_log_output_tool, handle_log_output
 from src.tools.check_draft import get_check_draft_tool, handle_check_draft
+from src.tools.onboarding import (
+    start_onboarding,
+    store_answer,
+    get_next_question,
+    complete_onboarding,
+)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -55,6 +61,7 @@ async def list_tools() -> list[Tool]:
 
     This is called by MCP clients to discover what tools are available.
     """
+    # Learning: learning/01_mcp_tools/README.md#tool-registration
     return [
         Tool(
             name="get_context",
@@ -75,6 +82,104 @@ async def list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["query"]
+            }
+        ),
+        Tool(
+            name="start_onboarding",
+            description=(
+                "Start onboarding flow to learn user preferences. "
+                "This is a 10-question adaptive flow (~5 minutes) based on GATE research. "
+                "\n\n"
+                "The flow starts with 2 anchor questions (role + AI usage), then adapts "
+                "to ask the most relevant questions based on user's profile type. "
+                "\n\n"
+                "Returns the first question to ask."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "User identifier"
+                    }
+                },
+                "required": ["user_id"]
+            }
+        ),
+        Tool(
+            name="store_answer",
+            description=(
+                "Store user's answer to an onboarding question. "
+                "\n\n"
+                "After storing, returns validation result and next question (if any). "
+                "\n\n"
+                "Research: GATE methodology - edge-case questions reveal tacit preferences."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "User identifier"
+                    },
+                    "target_id": {
+                        "type": "string",
+                        "description": "Target dimension ID (e.g., 'role', 'technical_depth')"
+                    },
+                    "answer": {
+                        "type": "object",
+                        "description": "User's answer. Format: binary/edge-case use {chosen_option: 'value'}, open questions use {answer: 'text'}",
+                        "properties": {
+                            "chosen_option": {
+                                "type": "string",
+                                "description": "For binary/edge-case questions: the chosen option value"
+                            },
+                            "answer": {
+                                "type": "string",
+                                "description": "For open questions: free-text answer"
+                            }
+                        }
+                    }
+                },
+                "required": ["user_id", "target_id", "answer"]
+            }
+        ),
+        Tool(
+            name="get_next_question",
+            description=(
+                "Get next onboarding question for the user. "
+                "\n\n"
+                "Returns question details with research-backed guidance on how to ask it. "
+                "Returns null if onboarding is complete."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "User identifier"
+                    }
+                },
+                "required": ["user_id"]
+            }
+        ),
+        Tool(
+            name="complete_onboarding",
+            description=(
+                "Complete onboarding and generate user profile. "
+                "\n\n"
+                "Can only be called when core questions (80% minimum) are answered. "
+                "Generates UserProfile from collected evidence."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "User identifier"
+                    }
+                },
+                "required": ["user_id"]
             }
         ),
         get_log_output_tool(),
@@ -109,6 +214,20 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         # TODO: Get user_id from MCP session context
         demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
         return await handle_check_draft(arguments, demo_user_id)
+
+    # Onboarding tools
+    # Learning: learning/07_user_profiles/README.md#gate-methodology
+    if name == "start_onboarding":
+        return await handle_start_onboarding(arguments)
+
+    if name == "store_answer":
+        return await handle_store_answer(arguments)
+
+    if name == "get_next_question":
+        return await handle_get_next_question(arguments)
+
+    if name == "complete_onboarding":
+        return await handle_complete_onboarding(arguments)
 
     raise ValueError(f"Unknown tool: {name}")
 
@@ -172,6 +291,76 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
         TextContent(
             type="text",
             text=response
+        )
+    ]
+
+
+# ═══════════════════════════════════════════════════════════
+# ONBOARDING TOOL HANDLERS
+# ═══════════════════════════════════════════════════════════
+
+async def handle_start_onboarding(arguments: dict) -> list[TextContent]:
+    """Handle start_onboarding tool call."""
+    import json
+
+    user_id = arguments.get("user_id", "demo_user")
+    result = start_onboarding(user_id)
+
+    return [
+        TextContent(
+            type="text",
+            text=json.dumps(result, indent=2)
+        )
+    ]
+
+
+async def handle_store_answer(arguments: dict) -> list[TextContent]:
+    """Handle store_answer tool call."""
+    import json
+
+    user_id = arguments.get("user_id", "demo_user")
+    target_id = arguments.get("target_id")
+    answer = arguments.get("answer", {})
+
+    result = store_answer(user_id, target_id, answer)
+
+    return [
+        TextContent(
+            type="text",
+            text=json.dumps(result, indent=2)
+        )
+    ]
+
+
+async def handle_get_next_question(arguments: dict) -> list[TextContent]:
+    """Handle get_next_question tool call."""
+    import json
+
+    user_id = arguments.get("user_id", "demo_user")
+    result = get_next_question(user_id)
+
+    if result is None:
+        result = {"status": "complete", "message": "Onboarding complete"}
+
+    return [
+        TextContent(
+            type="text",
+            text=json.dumps(result, indent=2)
+        )
+    ]
+
+
+async def handle_complete_onboarding(arguments: dict) -> list[TextContent]:
+    """Handle complete_onboarding tool call."""
+    import json
+
+    user_id = arguments.get("user_id", "demo_user")
+    result = complete_onboarding(user_id)
+
+    return [
+        TextContent(
+            type="text",
+            text=json.dumps(result, indent=2)
         )
     ]
 
