@@ -38,26 +38,35 @@ KIM provides **personalization + light memory** to any LLM the user works with.
 KIM is an MCP server with two layers:
 
 **Layer 1 (any LLM):** Exposes tools + an Anleitung (protocol). The LLM follows instructions, calls tools deterministically:
-- `get_context(query)` → profile + relevant examples
-- `check_draft(draft)` → independent validation against profile
+- `get_context(query)` → profile + relevant examples (ranked by relevance)
+- `check_draft(draft)` → two-stage validation (deterministic + semantic)
 - `onboard tools` → target-based preference elicitation
-- `log_output(text)` → store for future retrieval
+- `log_output(text)` → store + embed for future retrieval
 
-**Layer 2 (advanced clients):** If MCP sampling is supported, KIM orchestrates multi-step flows with fresh context per "agent role" — the user's LLM still does compute.
+**Layer 2 (advanced clients):** If MCP sampling is supported, KIM uses it for semantic validation — requesting the user's LLM to validate in a fresh context (no generation bias).
 
-**Key trick:** `check_draft` acts as a blind validator. The LLM thinks it's calling an external service — it gets unbiased feedback because KIM validates with fresh eyes (profile rules only, no generation context).
+**Core Loop (The Agentic Validation Pattern):**
+1. LLM calls `get_context()` → receives profile + ranked past outputs
+2. LLM generates draft
+3. LLM calls `check_draft(draft)` → KIM validates (deterministic + MCP sampling)
+4. If validation fails → LLM revises, back to step 3
+5. If validation passes → LLM shows to user
+6. LLM calls `log_output()` → KIM stores + embeds for future retrieval
+
+**Key trick:** `check_draft` acts as a blind validator. When using MCP sampling, KIM requests validation in a FRESH context (no generation history) — the LLM can't judge its own work objectively, but a fresh instance can.
 
 See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.tex` for the full LaTeX version.
 
 ## Design Principles
 
 1. **Segment by segment** — Build one concept at a time. Fully understand before moving on.
-2. **No LLM inside KIM** — Pure logic + data. The user's LLM provides all reasoning.
-3. **LLM-agnostic** — Works with any MCP-capable LLM. No vendor lock-in.
-4. **Research-backed targets** — Every onboarding dimension must cite scientific evidence.
-5. **Tools grow from usage** — Start broad, split into finer tools as patterns emerge.
-6. **The Anleitung IS the orchestration** — No agent framework needed, just well-designed instructions.
-7. **Modern tooling** — Use Claude Code's full toolkit (hooks, skills, agents, workflows) where each genuinely fits.
+2. **KIM never generates, only validates** — The user's LLM generates all responses. KIM provides context and validation.
+3. **Adaptive validation** — Deterministic checks first (free), then MCP sampling if available (uses user's LLM), fallback to deterministic only.
+4. **LLM-agnostic** — Works with any MCP-capable LLM. No vendor lock-in.
+5. **Research-backed targets** — Every onboarding dimension must cite scientific evidence.
+6. **Tools grow from usage** — Start broad, split into finer tools as patterns emerge.
+7. **The Anleitung IS the orchestration** — No agent framework needed, just well-designed instructions.
+8. **Modern tooling** — Use Claude Code's full toolkit (hooks, skills, agents, workflows) where each genuinely fits.
 
 ## How To Work On This Project
 
@@ -73,9 +82,9 @@ See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.t
 - [x] Segment 0: Project Skeleton + Context Architecture
 - [x] Segment 1: MCP Server Foundation
 - [x] Segment 2: Profile & Data Layer
-- [ ] Segment 3: Retrieval Engine
-- [ ] Segment 4: Draft Validation (The Self-Check)
-- [ ] Segment 5: GATE Onboarding System
+- [ ] Segment 3: Retrieval Engine (BM25 + vector, log_output tool)
+- [ ] Segment 4: Draft Validation (deterministic + MCP sampling)
+- [ ] Segment 5: GATE Onboarding System (target-based elicitation)
 - [ ] Segment 6: The Anleitung (Protocol Instructions)
 - [ ] Segment 7: Layer 2 — MCP Sampling Orchestration
 - [ ] Segment 8: Output Logging & Continuous Learning

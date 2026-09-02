@@ -286,10 +286,13 @@ graph LR
 
 | Decision | Why |
 |----------|-----|
-| No LLM inside KIM | User's LLM is powerful enough; KIM = pure logic + data |
-| `check_draft` as blind validator | LLM can't judge its own work; independent check is more honest |
+| KIM never generates, only validates | User's LLM generates; KIM provides context + validation |
+| Two-stage validation | Deterministic (free, fast) → MCP sampling (semantic, unbiased) |
+| MCP sampling for validation | Use user's LLM in fresh context (no generation bias) |
+| Adaptive validation strategy | Try MCP sampling → fallback deterministic only (no forced dependencies) |
+| `check_draft` as blind validator | LLM can't judge its own work; fresh context check is unbiased |
 | Research-based targets | Every onboarding dimension must cite evidence (GATE, Wu et al.) |
-| Two layers | Layer 1 works with any MCP client; Layer 2 for advanced orchestration |
+| Two layers | Layer 1 works with any MCP client; Layer 2 uses sampling for validation |
 | User outputs > inputs | Wu 2024: past writing drives personalization, not past questions |
 | Most-relevant-first | Wu 2024: position in context matters — best examples go first |
 | Tools split over time | Start broad, refine into granular tools as patterns emerge |
