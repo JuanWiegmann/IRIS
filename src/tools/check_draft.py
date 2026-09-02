@@ -1,14 +1,14 @@
 """
-Check Draft Tool (Enhanced)
-============================
+Check Draft Tool (Complete)
+===========================
 
 MCP tool for validating drafts with use-case-aware routing.
 
 Validation Strategy:
 1. Detect use case (messaging/coding/Mendix)
 2. Apply deterministic checks (per use case)
-3. (Future) MCP sampling for semantic validation
-4. Return combined feedback
+3. Apply MCP sampling for semantic validation (if available)
+4. Combine results and return feedback
 
 Use Cases:
 - MESSAGING: tone, format, boundaries
@@ -20,6 +20,7 @@ from uuid import UUID
 from mcp.types import Tool, TextContent
 
 from src.validation import detect_use_case, UseCase
+from src.tools.check_draft_impl import validate_messaging, validate_coding, validate_mendix
 
 
 # ═══════════════════════════════════════════════════════════
@@ -97,181 +98,18 @@ async def handle_check_draft(arguments: dict, user_id: UUID) -> list[TextContent
 
     # ═══ STEP 2: Route to Appropriate Validator ═══
     if use_case == UseCase.MESSAGING:
-        result = await _validate_messaging(draft, context, user_id)
+        result = await validate_messaging(draft, context, user_id)
     elif use_case == UseCase.CODING:
-        result = await _validate_coding(draft, context, user_id)
+        result = await validate_coding(draft, context, user_id)
     elif use_case == UseCase.MENDIX:
-        result = await _validate_mendix(draft, context, user_id)
+        result = await validate_mendix(draft, context, user_id)
     else:
-        result = await _validate_messaging(draft, context, user_id)  # Fallback
+        result = await validate_messaging(draft, context, user_id)  # Fallback
 
+    # Format result for LLM
     return [
         TextContent(
             type="text",
-            text=result
+            text=result.format_for_llm()
         )
     ]
-
-
-# ═══════════════════════════════════════════════════════════
-# VALIDATION STRATEGIES (PER USE CASE)
-# ═══════════════════════════════════════════════════════════
-
-async def _validate_messaging(draft: str, context: str, user_id: UUID) -> str:
-    """
-    Validate messaging content (emails, documents).
-
-    Checks:
-    - Tone appropriateness
-    - Format preferences
-    - Boundary violations
-    - Length constraints
-
-    Args:
-        draft: Draft content
-        context: Context description
-        user_id: User UUID
-
-    Returns:
-        Validation result as markdown
-    """
-    # TODO (Segment 4): Implement deterministic checks
-    # - Load profile
-    # - Check tone (casual vs formal markers)
-    # - Check format (bullets vs paragraphs)
-    # - Check boundaries (jargon blacklist)
-    # - Check length
-
-    # TODO (Segment 4): MCP sampling for semantic validation
-    # - Ask: "Is this message appropriate for the context?"
-
-    # Placeholder for now
-    return f"""✅ Draft validated (MESSAGING)
-
-**Use Case:** Messaging/Communication
-**Context:** {context}
-**Length:** {len(draft.split())} words
-
-**Status:** Basic validation passed
-⚠️ Full validation coming in Segment 4
-
-*Note: Checks tone, format, and boundaries against user profile*
-"""
-
-
-async def _validate_coding(draft: str, context: str, user_id: UUID) -> str:
-    """
-    Validate code content.
-
-    Checks:
-    - Basic syntax patterns
-    - Common anti-patterns
-    - Best practices (simple heuristics)
-
-    Enhanced (future):
-    - Ponytail plugin quality checks (via MCP sampling)
-
-    Args:
-        draft: Draft code
-        context: Context description
-        user_id: User UUID
-
-    Returns:
-        Validation result as markdown
-    """
-    issues = []
-
-    # Basic code quality checks (deterministic)
-    if "TODO" in draft or "FIXME" in draft:
-        issues.append("⚠️ Contains TODO/FIXME markers")
-
-    if "print(" in draft and "logging" not in draft.lower():
-        issues.append("💡 Consider using logging instead of print statements")
-
-    # Check for bare except
-    if "except:" in draft and "except " not in draft:
-        issues.append("⚠️ Bare 'except:' clause - specify exception types")
-
-    # TODO (Segment 4): MCP sampling with Ponytail awareness
-    # - Ask: "Validate this code for quality and correctness"
-    # - Claude Code (with Ponytail) performs deep analysis
-    # - Returns detailed code quality feedback
-
-    status = "✅ Looks good" if not issues else "⚠️ Suggestions found"
-
-    issues_text = "\n".join(issues) if issues else "*No issues detected*"
-
-    return f"""{status}
-
-**Use Case:** Code Validation
-**Context:** {context}
-**Lines:** {len(draft.splitlines())}
-
-**Code Quality Checks:**
-{issues_text}
-
-⚠️ **Note:** Enhanced validation with Ponytail coming in Segment 4
-Future: Deep analysis (complexity, coverage, best practices)
-
-*For now: Basic pattern checks only*
-"""
-
-
-async def _validate_mendix(draft: str, context: str, user_id: UUID) -> str:
-    """
-    Validate Mendix content.
-
-    Checks:
-    - XML structure (basic)
-    - Entity naming conventions
-    - Common Mendix patterns
-
-    Does NOT:
-    - Execute Mendix CLI (it's beta, unstable)
-    - Deploy to Mendix Cloud
-    - Validate against running app
-
-    Args:
-        draft: Draft Mendix content
-        context: Context description
-        user_id: User UUID
-
-    Returns:
-        Validation result as markdown
-    """
-    issues = []
-
-    # Basic Mendix checks
-    if "<entity" in draft and 'name=""' in draft:
-        issues.append("❌ Entity has empty name attribute")
-
-    if "microflow" in draft.lower() and not any(x in draft for x in ["<microflow", "microflow name"]):
-        issues.append("💡 Microflow mentioned but not properly defined")
-
-    # Check for plural entity names (anti-pattern)
-    if "<entity name=" in draft:
-        import re
-        entities = re.findall(r'<entity name="(\w+)"', draft)
-        plurals = [e for e in entities if e.endswith('s') and len(e) > 3]
-        if plurals:
-            issues.append(f"⚠️ Entity names should be singular: {', '.join(plurals)}")
-
-    status = "✅ Looks good" if not issues else "⚠️ Issues found"
-
-    issues_text = "\n".join(issues) if issues else "*No issues detected*"
-
-    return f"""{status}
-
-**Use Case:** Mendix Development
-**Context:** {context}
-
-**Mendix Pattern Checks:**
-{issues_text}
-
-⚠️ **Important:**
-- Mendix CLI is in **BETA** — validation only, no execution
-- Always verify in Mendix Studio before deployment
-- Enhanced validation with MCP sampling coming in Segment 4
-
-*For now: Basic XML pattern checks only*
-"""

@@ -24,6 +24,7 @@ from mcp.types import Tool, TextContent
 from src.profile import get_or_create_profile, format_profile_for_llm
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
 from src.tools.log_output import get_log_output_tool, handle_log_output
+from src.tools.check_draft import get_check_draft_tool, handle_check_draft
 
 
 # ═══════════════════════════════════════════════════════════
@@ -66,7 +67,8 @@ async def list_tools() -> list[Tool]:
                 "required": ["query"]
             }
         ),
-        get_log_output_tool()
+        get_log_output_tool(),
+        get_check_draft_tool()
     ]
 
 
@@ -89,6 +91,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         # TODO: Get user_id from MCP session context
         demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
         return await handle_log_output(arguments, demo_user_id)
+
+    if name == "check_draft":
+        # TODO: Get user_id from MCP session context
+        demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
+        return await handle_check_draft(arguments, demo_user_id)
 
     raise ValueError(f"Unknown tool: {name}")
 
