@@ -21,10 +21,20 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
+from src.observability import setup_logging, get_logger, log_tool_call
+
 from src.profile import get_or_create_profile, format_profile_for_llm
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
 from src.tools.log_output import get_log_output_tool, handle_log_output
 from src.tools.check_draft import get_check_draft_tool, handle_check_draft
+
+
+# ═══════════════════════════════════════════════════════════
+# LOGGING SETUP
+# ═══════════════════════════════════════════════════════════
+
+setup_logging()
+logger = get_logger("server")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -84,6 +94,9 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     Returns:
         List of text content blocks
     """
+    # Log the tool call
+    log_tool_call(logger, name, arguments)
+
     if name == "get_context":
         return await handle_get_context(arguments)
 
