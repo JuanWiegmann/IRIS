@@ -1,10 +1,10 @@
-# KIM — Project Constitution
+# IRIS — Project Constitution
 
 ## What This Is
 
-KIM is an **MCP middleware server** — a personalization layer that sits between the user and ANY LLM they use (Claude, Copilot, ChatGPT). KIM provides context, validates drafts, manages user profiles, and runs onboarding — so every LLM interaction is personalized, regardless of which model the user talks to.
+IRIS is an **MCP middleware server** — a personalization layer that sits between the user and ANY LLM they use (Claude, Copilot, ChatGPT). IRIS provides context, validates drafts, manages user profiles, and runs onboarding — so every LLM interaction is personalized, regardless of which model the user talks to.
 
-**KIM does NOT generate responses.** The user's LLM does all reasoning and generation. KIM is pure logic + data.
+**IRIS does NOT generate responses.** The user's LLM does all reasoning and generation. IRIS is pure logic + data.
 
 This project is also a **learning environment** for the Claude Certified Architect – Professional certification.
 
@@ -18,24 +18,24 @@ This project is also a **learning environment** for the Claude Certified Archite
 
 ## Scope
 
-KIM provides **personalization + light memory** to any LLM the user works with.
+IRIS provides **personalization + light memory** to any LLM the user works with.
 
-**What KIM provides:**
+**What IRIS provides:**
 - User profile (communication style, tone, format preferences, boundaries)
 - Relevant examples (past user outputs, ranked by relevance to current query)
 - Work context (current projects, recent decisions, ongoing topics)
 - Validation (checking if LLM output matches the user's known preferences)
 
-**What KIM does NOT do:**
+**What IRIS does NOT do:**
 - Generate responses (the user's LLM does this)
 - Orchestrate tasks (no email sending, no calendar, no Workday)
-- Replace tools (KIM augments, not replaces)
+- Replace tools (IRIS augments, not replaces)
 
 **Future (not now):** Could expand to VW Workday orchestration, task management, tool integration. Current scope is purely: make every LLM interaction personalized and context-aware.
 
 ## Architecture
 
-KIM is an MCP server with two layers:
+IRIS is an MCP server with two layers:
 
 **Layer 1 (any LLM):** Exposes tools + an Anleitung (protocol). The LLM follows instructions, calls tools deterministically:
 - `get_context(query)` → profile + relevant examples (ranked by relevance)
@@ -43,24 +43,24 @@ KIM is an MCP server with two layers:
 - `onboard tools` → target-based preference elicitation
 - `log_output(text)` → store + embed for future retrieval
 
-**Layer 2 (advanced clients):** If MCP sampling is supported, KIM uses it for semantic validation — requesting the user's LLM to validate in a fresh context (no generation bias).
+**Layer 2 (advanced clients):** If MCP sampling is supported, IRIS uses it for semantic validation — requesting the user's LLM to validate in a fresh context (no generation bias).
 
 **Core Loop (The Agentic Validation Pattern):**
 1. LLM calls `get_context()` → receives profile + ranked past outputs
 2. LLM generates draft
-3. LLM calls `check_draft(draft)` → KIM validates (deterministic + MCP sampling)
+3. LLM calls `check_draft(draft)` → IRIS validates (deterministic + MCP sampling)
 4. If validation fails → LLM revises, back to step 3
 5. If validation passes → LLM shows to user
-6. LLM calls `log_output()` → KIM stores + embeds for future retrieval
+6. LLM calls `log_output()` → IRIS stores + embeds for future retrieval
 
-**Key trick:** `check_draft` acts as a blind validator. When using MCP sampling, KIM requests validation in a FRESH context (no generation history) — the LLM can't judge its own work objectively, but a fresh instance can.
+**Key trick:** `check_draft` acts as a blind validator. When using MCP sampling, IRIS requests validation in a FRESH context (no generation history) — the LLM can't judge its own work objectively, but a fresh instance can.
 
-See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.tex` for the full LaTeX version.
+See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/iris_system_logic.tex` for the full LaTeX version.
 
 ## Design Principles
 
 1. **Segment by segment** — Build one concept at a time. Fully understand before moving on.
-2. **KIM never generates, only validates** — The user's LLM generates all responses. KIM provides context and validation.
+2. **IRIS never generates, only validates** — The user's LLM generates all responses. IRIS provides context and validation.
 3. **Adaptive validation** — Deterministic checks first (free), then MCP sampling if available (uses user's LLM), fallback to deterministic only.
 4. **LLM-agnostic** — Works with any MCP-capable LLM. No vendor lock-in.
 5. **Research-backed targets** — Every onboarding dimension must cite scientific evidence.
@@ -70,12 +70,29 @@ See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.t
 
 ## How To Work On This Project
 
-- **PRE-INFO on every action** — Before EVERY tool call, write one visible line: `**PRE-INFO:** <what> — <why in KIM's context>`. This is mandatory, never skip it.
+- **PRE-INFO on every action** — Before EVERY tool call, write one visible line: `**PRE-INFO:** <what> — <why in IRIS's context>`. This is mandatory, never skip it.
 - **Always check `ARCHITECTURE.md`** for current state and what's next
 - **Use `/status`** for on-demand orientation
 - **One segment at a time** — see the plan for segment order
 - **Ask "why" freely** — understanding > speed
 - **Architect Radar hook** fires after edits and surfaces certification-relevant learning links
+
+## Using IRIS Tools (Meta-Rule for Claude Code)
+
+When the user asks about their profile or preferences, **ALWAYS call IRIS tools first** (never check local memory or files):
+
+**Auto-trigger `mcp__iris__get_context()` for:**
+- "What do you know about me?"
+- "What's my profile?"
+- "What are my preferences?"
+- "Tell me about my [style/tone/preferences]"
+
+**Auto-trigger `/startIris` skill for:**
+- "Set up my profile"
+- "Run onboarding"
+- "I want to personalize IRIS"
+
+IRIS is the source of truth for user profiles — use it, don't reinvent it.
 
 ## Build Segments (Current Progress)
 
@@ -102,8 +119,8 @@ See `ARCHITECTURE.md` for visual diagrams. See `docs/diagrams/kim_system_logic.t
 ## What NOT To Do
 
 - Don't implement multiple concepts in one step
-- Don't add a local LLM dependency — KIM must work without one
-- Don't generate final responses inside KIM — only provide context/validation
+- Don't add a local LLM dependency — IRIS must work without one
+- Don't generate final responses inside IRIS — only provide context/validation
 - Don't skip the learning module when introducing a new pattern
 - Don't create monolithic tools — split by distinct actions the LLM needs independently
 - Don't invent onboarding targets without research backing
