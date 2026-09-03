@@ -26,8 +26,10 @@ from src.onboarding import (
     get_onboarding_store,
     initialize_session,
 )
+from src.onboarding.profile_generation import generate_profile_from_session
 from src.onboarding.schema import OnboardingSession
 from src.onboarding.targets import get_all_targets
+from src.profile.store import get_default_store
 
 
 def start_onboarding(user_id: str) -> Dict[str, Any]:
@@ -160,8 +162,20 @@ def store_answer(
 
     elif target_id == "ai_usage" and session.questions_asked == 2:
         # Just answered Q2, now initialize full session with adaptive questions
+        # Extract from session fields (populated by add_answer) or from evidence (fallback)
         role = session.role
         ai_usage = session.ai_usage
+
+        # Fallback: extract from target evidence if fields not populated
+        if not role and "role" in session.targets:
+            role_evidence = session.targets["role"].evidence
+            if role_evidence:
+                role = role_evidence[0]["data"].get("answer") or role_evidence[0]["data"].get("chosen_option")
+
+        if not ai_usage and "ai_usage" in session.targets:
+            ai_usage_evidence = session.targets["ai_usage"].evidence
+            if ai_usage_evidence:
+                ai_usage = ai_usage_evidence[0]["data"].get("answer") or ai_usage_evidence[0]["data"].get("chosen_option")
 
         # Re-initialize session with adaptive question selection
         session = initialize_session(
@@ -245,6 +259,8 @@ def complete_onboarding(user_id: str) -> Dict[str, Any]:
             "core_satisfaction_rate": float
         }
     """
+    import asyncio
+
     store = get_onboarding_store()
 
     session = store.get_active_session(user_id)
@@ -262,7 +278,27 @@ def complete_onboarding(user_id: str) -> Dict[str, Any]:
     # Mark complete
     session.complete()
 
-    # Save as completed
+    # Generate UserProfile from evidence
+    profile = generate_profile_from_session(session)
+
+    # Save profile
+    profile_store = get_default_store()
+    try:
+        asyncio.run(profile_store.save(profile))
+        profile_generated = True
+    except Exception as e:
+        profile_generated = False
+        # Still mark session complete but flag the error
+        store.save_session(session)
+        store.delete_active_session(user_id)
+        return {
+            "status": "completed_with_error",
+            "error": f"Profile generation failed: {str(e)}",
+            "session_id": session.session_id,
+            "questions_answered": session.questions_asked,
+        }
+
+    # Save completed session
     store.save_session(session)
 
     # Delete active session
@@ -271,6 +307,8 @@ def complete_onboarding(user_id: str) -> Dict[str, Any]:
     return {
         "status": "completed",
         "session_id": session.session_id,
+        "profile_id": str(profile.id),
+        "profile_generated": profile_generated,
         "questions_answered": session.questions_asked,
         "core_satisfaction_rate": session.get_core_satisfaction_rate(),
         "satisfied_dimensions": session.get_satisfied_dimensions(),

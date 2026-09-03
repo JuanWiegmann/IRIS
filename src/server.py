@@ -1,8 +1,8 @@
 """
-KIM MCP Server
+IRIS MCP Server
 ==============
 
-Entry point for the KIM MCP middleware server.
+Entry point for the IRIS MCP middleware server.
 
 This server exposes tools that allow any LLM to access personalized context,
 validate drafts, manage onboarding, and log outputs.
@@ -19,11 +19,12 @@ from uuid import UUID
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import Tool, TextContent, Resource, Prompt, PromptMessage
 
 from src.observability import setup_logging, get_logger, log_tool_call
+from src.anleitung import get_anleitung
 
-from src.profile import get_or_create_profile, format_profile_for_llm
+from src.profile import get_or_create_profile, format_profile_for_llm, profile_exists
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
 from src.tools.log_output import get_log_output_tool, handle_log_output
 from src.tools.check_draft import get_check_draft_tool, handle_check_draft
@@ -47,7 +48,92 @@ logger = get_logger("server")
 # SERVER INSTANCE
 # ═══════════════════════════════════════════════════════════
 
-app = Server("kim-server")
+app = Server("iris-server")
+
+
+# ═══════════════════════════════════════════════════════════
+# RESOURCES: Protocol Instructions
+# ═══════════════════════════════════════════════════════════
+
+@app.list_resources()
+async def list_resources() -> list[Resource]:
+    """
+    Register MCP resources.
+
+    Resources are static content that LLMs can read (like protocol instructions).
+    """
+    return [
+        Resource(
+            uri="iris://protocol",
+            name="IRIS Protocol (Anleitung)",
+            mimeType="text/markdown",
+            description="Strict protocol for using IRIS. MUST be followed by all LLMs."
+        )
+    ]
+
+
+@app.read_resource()
+async def read_resource(uri: str) -> str:
+    """
+    Read a resource by URI.
+
+    Args:
+        uri: Resource URI (e.g., "iris://protocol")
+
+    Returns:
+        Resource content as string
+    """
+    if uri == "iris://protocol":
+        return get_anleitung()
+
+    raise ValueError(f"Unknown resource: {uri}")
+
+
+# ═══════════════════════════════════════════════════════════
+# PROMPTS: Auto-loaded Protocol
+# ═══════════════════════════════════════════════════════════
+
+@app.list_prompts()
+async def list_prompts() -> list[Prompt]:
+    """
+    Register MCP prompts.
+
+    Prompts are auto-loaded into the LLM's context.
+    This is how we enforce the profile-first protocol.
+    """
+    return [
+        Prompt(
+            name="iris-protocol",
+            description="IRIS usage protocol - MANDATORY. Enforces profile-first workflow.",
+            arguments=[]
+        )
+    ]
+
+
+@app.get_prompt()
+async def get_prompt(name: str, arguments: dict) -> list[PromptMessage]:
+    """
+    Get a prompt by name.
+
+    Args:
+        name: Prompt name
+        arguments: Prompt arguments (unused for iris-protocol)
+
+    Returns:
+        List of messages to inject into context
+    """
+    if name == "iris-protocol":
+        return [
+            PromptMessage(
+                role="user",
+                content=TextContent(
+                    type="text",
+                    text=get_anleitung()
+                )
+            )
+        ]
+
+    raise ValueError(f"Unknown prompt: {name}")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -207,12 +293,14 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 
     if name == "log_output":
         # TODO: Get user_id from MCP session context
-        demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
+        from uuid import uuid5, NAMESPACE_DNS
+        demo_user_id = uuid5(NAMESPACE_DNS, "iris.user.demo_user")
         return await handle_log_output(arguments, demo_user_id)
 
     if name == "check_draft":
         # TODO: Get user_id from MCP session context
-        demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
+        from uuid import uuid5, NAMESPACE_DNS
+        demo_user_id = uuid5(NAMESPACE_DNS, "iris.user.demo_user")
         return await handle_check_draft(arguments, demo_user_id)
 
     # Onboarding tools
@@ -247,12 +335,27 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     Returns:
         List with one TextContent block containing the context
     """
+    from uuid import uuid5, NAMESPACE_DNS
+
     query = arguments.get("query", "")
 
     # TODO: Get user_id from MCP session context
     # For now, use a fixed demo user ID
-    # In production, this would come from authentication
-    demo_user_id = UUID("00000000-0000-0000-0000-000000000001")
+    # Generate consistent UUID from user_id string (same as profile_generation.py)
+    user_id_str = "demo_user"
+    demo_user_id = uuid5(NAMESPACE_DNS, f"iris.user.{user_id_str}")
+
+    # ═══ GATE CHECK: Profile must exist ═══
+    # Learning: learning/07_user_profiles/README.md#onboarding-gates
+    if not profile_exists(demo_user_id):
+        return [
+            TextContent(
+                type="text",
+                text="ONBOARDING_REQUIRED\n\n"
+                     "No profile found. You must complete onboarding before using IRIS.\n\n"
+                     "Call start_onboarding() to begin. This takes ~5 minutes and enables full personalization."
+            )
+        ]
 
     # Load or create user profile (Segment 2)
     # Learning: learning/02_data_modeling/README.md#profile-loading
@@ -274,8 +377,30 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
         # No outputs yet, or retrieval failed
         outputs_text = "*(No past outputs stored yet)*"
 
-    # Build full context response
-    response = f"""# Personalized Context for: "{query}"
+    # Build full context response with Janus visual
+    janus_header = """
+    ┌─────────────────────────────────────┐
+    │      JANUS                   │
+    │                                     │
+    │  PAST ◀───          ───▶ PRESENT   │
+    │    ___                ___           │
+    │   /• •\\              /• •\\          │
+    │  ( ←_• )            ( •_→ )         │
+    │   \\___/              \\___/          │
+    │    |▓|                |▓|           │
+    │   /═╬═\\              /═╬═\\          │
+    │  ( ▓▓▓ )            ( ▓▓▓ )         │
+    │   |║║|               |║║|          │
+    │   | | |              | | |         │
+    │  /  |  \\            /  |  \\        │
+    │                                     │
+    │  [Context served from both sides]   │
+    └─────────────────────────────────────┘
+    """
+
+    response = f"""{janus_header}
+
+# Personalized Context for: "{query}"
 
 {profile_text}
 
@@ -283,7 +408,7 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
 {outputs_text}
 
 ---
-*Profile loaded from: ~/.kim/profiles/{profile.id}.json*
+*Served by Janus • Profile: ~/.iris/profiles/{profile.id}.json*
 *Retrieval: Hybrid BM25 + vector similarity (Wu et al. 2024)*
 """
 
