@@ -289,7 +289,7 @@ validation:
 ### Automated (Recommended):
 ```bash
 cd KIM
-python setup.py
+python install.py
 
 # This installs:
 # ✅ KIM MCP server

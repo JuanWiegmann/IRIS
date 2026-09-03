@@ -28,7 +28,7 @@ cd KIM
 
 **For Users (Simple):**
 ```bash
-python setup.py
+python install.py
 ```
 
 **For Developers:**

@@ -1,6 +1,6 @@
 """
-KIM Automated Setup
-===================
+KIM Automated Installer
+========================
 
 FULLY AUTOMATED installation and configuration — ZERO manual intervention.
 
@@ -16,7 +16,7 @@ When user says any of these:
   • "get kim working"
 
 YOU SHOULD:
-1. Run this command: python setup.py
+1. Run this command: python install.py
 2. Follow any prompts (close Claude Code if needed)
 3. Tell user: "Setup complete! I'll restart now, then you can use KIM"
 4. (Setup will auto-launch Claude Code)
@@ -118,7 +118,7 @@ MCP Servers Registered:
 ═══════════════════════════════════════════════════════════════════════════════
 
 Usage:
-    python setup.py
+    python install.py
 
 That's the ONLY command needed. Everything else is automatic.
 
@@ -130,7 +130,6 @@ import os
 import subprocess
 import sys
 import time
-import psutil
 from pathlib import Path
 from typing import Optional, Tuple, List
 
@@ -184,6 +183,7 @@ def is_claude_code_running() -> bool:
         True if Claude Code process is running, False otherwise
     """
     try:
+        import psutil
         for proc in psutil.process_iter(['name', 'exe']):
             try:
                 name = proc.info['name']
@@ -289,12 +289,13 @@ def install_dependencies():
             [sys.executable, "-m", "pip", "install", "-e", "."],
             cwd=kim_root,
             check=True,
-            capture_output=True
+            capture_output=True,
+            text=True
         )
         print("✅ Dependencies installed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to install dependencies: {e.stderr.decode()}")
+        print(f"❌ Failed to install dependencies: {e.stderr}")
         return False
 
 
@@ -572,7 +573,8 @@ def install_ponytail():
             subprocess.run(
                 ["git", "clone", "https://github.com/DietrichGebert/ponytail.git", str(ponytail_dir)],
                 check=True,
-                capture_output=True
+                capture_output=True,
+                text=True
             )
             print(f"✅ Ponytail cloned to: {ponytail_dir}")
 
@@ -583,13 +585,14 @@ def install_ponytail():
                 [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
                 cwd=ponytail_dir,
                 check=True,
-                capture_output=True
+                capture_output=True,
+                text=True
             )
 
         return True, ponytail_dir
 
     except subprocess.CalledProcessError as e:
-        print(f"⚠️  Failed to install Ponytail: {e.stderr.decode() if e.stderr else str(e)}")
+        print(f"⚠️  Failed to install Ponytail: {e.stderr if e.stderr else str(e)}")
         print("   Skipping Ponytail (optional)")
         return False, None
     except Exception as e:
@@ -725,6 +728,11 @@ def validate_config_json(config_path: Path) -> bool:
 
 def main():
     """Main setup flow with full automation and rollback."""
+    # Fix Windows console encoding for emoji
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
     print("=" * 70)
     print("🚀 KIM FULLY AUTOMATED SETUP")
     print("=" * 70)
