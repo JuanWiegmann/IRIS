@@ -630,20 +630,17 @@ def register_mcp_json():
 
 def setup_memory_redirects():
     """
-    Create memory redirect files so Claude Code uses IRIS as source of truth.
+    Create GLOBAL memory redirect files so Claude Code uses IRIS from any session.
 
-    Creates reference memory files that point to IRIS tools instead of
-    duplicating user profile/preferences in local memory.
+    Creates reference memory files in ~/.claude/memory/ that point to IRIS tools
+    instead of duplicating user profile/preferences in local memory.
 
     Returns:
         True if created successfully, False otherwise
     """
     try:
-        iris_root = get_iris_root()
-        # Claude Code memory path pattern: ~/.claude/projects/<sanitized-path>/memory/
-        # Sanitize path: replace backslashes, colons, spaces with hyphens
-        sanitized_path = str(iris_root).replace("\\", "-").replace(":", "-").replace(" ", "-")
-        memory_dir = Path.home() / ".claude" / "projects" / sanitized_path / "memory"
+        # Global memory location (works across all sessions/directories)
+        memory_dir = Path.home() / ".claude" / "memory"
         memory_dir.mkdir(parents=True, exist_ok=True)
 
         # MEMORY.md - index
@@ -762,6 +759,51 @@ User onboarding is handled by **IRIS** via the `/startIris` skill.
 - Bypass the onboarding system
 
 **Related:** [[user-profile]] for the profile structure
+""", encoding="utf-8")
+
+        # Global CLAUDE.md (instructions for all sessions)
+        claude_md_path = Path.home() / ".claude" / "CLAUDE.md"
+        claude_md_path.write_text("""# Global Instructions — IRIS Integration
+
+## IRIS MCP Server
+
+IRIS is a personalization middleware that provides user profiles, context, and validation
+across ALL sessions — regardless of which directory you're in.
+
+## Auto-Trigger Rules
+
+When the user asks about their profile or preferences, **ALWAYS call IRIS tools first**
+(never check local memory or files):
+
+**Auto-trigger `mcp__iris__get_context()` for:**
+- "What do you know about me?"
+- "What's my profile?"
+- "What are my preferences?"
+- "Tell me about my [style/tone/preferences]"
+
+**Auto-trigger `/startIris` skill for:**
+- "Set up my profile"
+- "Run onboarding"
+- "I want to personalize IRIS"
+
+IRIS is the source of truth for user profiles — use it, don't reinvent it.
+
+## Memory System
+
+Check `~/.claude/memory/MEMORY.md` for pointers to IRIS tools.
+
+User profile data lives in IRIS (research-backed: GATE preference elicitation,
+output-driven personalization, hybrid BM25 + vector retrieval).
+
+Don't store user preferences in local memory files — IRIS does it better.
+
+## Visual Identity
+
+When IRIS context is loaded, responses start with the JANUS logo:
+
+**( ←_• )( •_→ )** — left face looks at PAST, right face looks at PRESENT
+
+This tells the user their interaction is personalized.
 """, encoding="utf-8")
 
         return True
