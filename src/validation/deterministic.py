@@ -66,6 +66,15 @@ class MessagingValidator:
         # Load profile
         profile = await get_or_create_profile(user_id)
 
+        # Block if no profile exists (onboarding required)
+        if profile is None:
+            return [ValidationIssue(
+                severity="error",
+                category="profile",
+                message="ONBOARDING_REQUIRED: No profile found. Complete onboarding before using validation.",
+                suggestion="Call start_onboarding() to create your profile."
+            )]
+
         # Check tone
         issues.extend(self._check_tone(draft, profile))
 

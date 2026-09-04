@@ -286,26 +286,21 @@ class ProfileStoreDB:
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
-async def get_or_create_profile_db(user_id: UUID) -> UserProfile:
+async def get_or_create_profile_db(user_id: UUID) -> Optional[UserProfile]:
     """
-    Get an existing profile or create a default one (database version).
+    Get an existing profile (returns None if not found) - database version.
+
+    NO LONGER auto-creates default profiles.
+    Onboarding is now MANDATORY before any IRIS features work.
 
     Args:
         user_id: The user's UUID
 
     Returns:
-        The user's profile
+        The user's profile, or None if not found (onboarding required)
     """
     store = ProfileStoreDB()
-    profile = await store.read(user_id)
-
-    if profile is None:
-        # Create default profile
-        profile = create_default_profile()
-        profile.id = user_id
-        await store.create(profile)
-
-    return profile
+    return await store.read(user_id)
 
 
 # ═══════════════════════════════════════════════════════════

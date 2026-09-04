@@ -5,9 +5,10 @@ File-Based Storage
 Local JSON file storage for profiles and outputs.
 
 Storage structure:
-~/.kim/
-├── profiles/
-│   └── {user_id}.json
+~/.iris/
+├── data/
+│   └── profiles/
+│       └── {user_id}.json
 ├── outputs/
 │   └── {user_id}/
 │       ├── 001_email_team.json
@@ -28,15 +29,15 @@ from src.profile.schema import UserProfile, create_default_profile
 # STORAGE ROOT
 # ═══════════════════════════════════════════════════════════
 
-def get_kim_root() -> Path:
+def get_iris_root() -> Path:
     """
-    Get KIM storage root directory.
+    Get IRIS storage root directory.
 
-    Returns ~/.kim/ and creates it if needed.
+    Returns ~/.iris/ and creates it if needed.
     """
-    kim_root = Path.home() / ".kim"
-    kim_root.mkdir(exist_ok=True)
-    return kim_root
+    iris_root = Path.home() / ".iris"
+    iris_root.mkdir(exist_ok=True)
+    return iris_root
 
 
 # ═══════════════════════════════════════════════════════════
@@ -47,7 +48,7 @@ class ProfileStore:
     """
     File-based profile storage.
 
-    Stores profiles as JSON files in ~/.kim/profiles/
+    Stores profiles as JSON files in ~/.iris/profiles/
     """
 
     def __init__(self, root: Optional[Path] = None):
@@ -55,11 +56,11 @@ class ProfileStore:
         Initialize profile store.
 
         Args:
-            root: Storage root (defaults to ~/.kim/)
+            root: Storage root (defaults to ~/.iris/)
         """
-        self.root = root or get_kim_root()
-        self.profiles_dir = self.root / "profiles"
-        self.profiles_dir.mkdir(exist_ok=True)
+        self.root = root or get_iris_root()
+        self.profiles_dir = self.root / "data" / "profiles"
+        self.profiles_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_profile_path(self, user_id: UUID) -> Path:
         """Get path to user's profile file."""
@@ -179,7 +180,7 @@ class OutputStore:
     """
     File-based output storage.
 
-    Stores outputs as JSON files in ~/.kim/outputs/{user_id}/
+    Stores outputs as JSON files in ~/.iris/outputs/{user_id}/
     """
 
     def __init__(self, root: Optional[Path] = None):
@@ -187,9 +188,9 @@ class OutputStore:
         Initialize output store.
 
         Args:
-            root: Storage root (defaults to ~/.kim/)
+            root: Storage root (defaults to ~/.iris/)
         """
-        self.root = root or get_kim_root()
+        self.root = root or get_iris_root()
         self.outputs_dir = self.root / "outputs"
         self.outputs_dir.mkdir(exist_ok=True)
 
@@ -332,7 +333,7 @@ class EmbeddingStore:
     """
     NumPy-based embedding storage.
 
-    Stores embeddings as .npy files in ~/.kim/embeddings/
+    Stores embeddings as .npy files in ~/.iris/embeddings/
     """
 
     def __init__(self, root: Optional[Path] = None):
@@ -340,9 +341,9 @@ class EmbeddingStore:
         Initialize embedding store.
 
         Args:
-            root: Storage root (defaults to ~/.kim/)
+            root: Storage root (defaults to ~/.iris/)
         """
-        self.root = root or get_kim_root()
+        self.root = root or get_iris_root()
         self.embeddings_dir = self.root / "embeddings"
         self.embeddings_dir.mkdir(exist_ok=True)
 
@@ -353,26 +354,21 @@ class EmbeddingStore:
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
-async def get_or_create_profile(user_id: UUID) -> UserProfile:
+async def get_or_create_profile(user_id: UUID) -> Optional[UserProfile]:
     """
-    Get an existing profile or create a default one.
+    Get an existing profile (returns None if not found).
+
+    NO LONGER auto-creates default profiles.
+    Onboarding is now MANDATORY before any IRIS features work.
 
     Args:
         user_id: User UUID
 
     Returns:
-        User profile
+        User profile, or None if not found (onboarding required)
     """
     store = ProfileStore()
-    profile = await store.read(user_id)
-
-    if profile is None:
-        # Create default profile
-        profile = create_default_profile()
-        profile.id = user_id
-        await store.create(profile)
-
-    return profile
+    return await store.read(user_id)
 
 
 # ═══════════════════════════════════════════════════════════

@@ -6,7 +6,7 @@ CRUD operations for user profiles.
 
 Storage strategy:
 - File-based (JSON) for Segment 2 (simple, portable)
-- One file per profile: ~/.kim/data/profiles/{user_id}.json
+- One file per profile: ~/.iris/data/profiles/{user_id}.json
 - Async I/O (non-blocking)
 
 Future considerations (Segment 9):
@@ -30,7 +30,7 @@ from src.profile.schema import UserProfile, create_default_profile
 # ═══════════════════════════════════════════════════════════
 
 # Default data directory
-DEFAULT_DATA_DIR = Path.home() / ".kim" / "data" / "profiles"
+DEFAULT_DATA_DIR = Path.home() / ".iris" / "data" / "profiles"
 
 
 # ═══════════════════════════════════════════════════════════
@@ -49,7 +49,7 @@ class ProfileStore:
         Initialize the profile store.
 
         Args:
-            data_dir: Directory for profile storage (defaults to ~/.kim/data/profiles)
+            data_dir: Directory for profile storage (defaults to ~/.iris/data/profiles)
         """
         self.data_dir = data_dir or DEFAULT_DATA_DIR
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -172,31 +172,65 @@ class ProfileStore:
 async def get_or_create_profile(
     user_id: UUID,
     store: Optional[ProfileStore] = None
-) -> UserProfile:
+) -> Optional[UserProfile]:
     """
-    Get an existing profile or create a default one.
+    Get an existing profile (returns None if not found).
 
-    This is the main entry point for loading user profiles.
+    NO LONGER auto-creates default profiles. This prevents LLMs from
+    treating 10% confidence defaults as real user profiles.
+
+    Onboarding is now MANDATORY before any IRIS features work.
 
     Args:
         user_id: The user's UUID
         store: ProfileStore instance (creates default if None)
 
     Returns:
-        The user's profile
+        The user's profile, or None if not found (onboarding required)
     """
     if store is None:
         store = ProfileStore()
 
-    profile = await store.read(user_id)
+    return await store.read(user_id)
 
-    if profile is None:
-        # Create default profile
-        profile = create_default_profile()
-        profile.id = user_id
-        await store.create(profile)
 
-    return profile
+async def get_profile(
+    user_id: UUID,
+    store: Optional[ProfileStore] = None
+) -> Optional[UserProfile]:
+    """
+    Get an existing profile (returns None if not found).
+
+    Use this for gate checks where profile MUST exist.
+
+    Args:
+        user_id: The user's UUID
+        store: ProfileStore instance (creates default if None)
+
+    Returns:
+        The user's profile, or None if not found
+    """
+    if store is None:
+        store = ProfileStore()
+
+    return await store.read(user_id)
+
+
+def profile_exists(user_id: UUID, store: Optional[ProfileStore] = None) -> bool:
+    """
+    Synchronous check if profile exists.
+
+    Args:
+        user_id: The user's UUID
+        store: ProfileStore instance (creates default if None)
+
+    Returns:
+        True if profile exists, False otherwise
+    """
+    if store is None:
+        store = ProfileStore()
+
+    return store._profile_path(user_id).exists()
 
 
 # ═══════════════════════════════════════════════════════════

@@ -23,6 +23,7 @@ from mcp.types import Tool, TextContent, Resource, Prompt, PromptMessage
 
 from src.observability import setup_logging, get_logger, log_tool_call
 from src.anleitung import get_anleitung
+from src.utils import get_user_id, iris_response
 
 from src.profile import get_or_create_profile, format_profile_for_llm, profile_exists
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
@@ -292,16 +293,12 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         return await handle_get_context(arguments)
 
     if name == "log_output":
-        # TODO: Get user_id from MCP session context
-        from uuid import uuid5, NAMESPACE_DNS
-        demo_user_id = uuid5(NAMESPACE_DNS, "iris.user.demo_user")
-        return await handle_log_output(arguments, demo_user_id)
+        user_id = get_user_id()
+        return await handle_log_output(arguments, user_id)
 
     if name == "check_draft":
-        # TODO: Get user_id from MCP session context
-        from uuid import uuid5, NAMESPACE_DNS
-        demo_user_id = uuid5(NAMESPACE_DNS, "iris.user.demo_user")
-        return await handle_check_draft(arguments, demo_user_id)
+        user_id = get_user_id()
+        return await handle_check_draft(arguments, user_id)
 
     # Onboarding tools
     # Learning: learning/07_user_profiles/README.md#gate-methodology
@@ -335,31 +332,37 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     Returns:
         List with one TextContent block containing the context
     """
-    from uuid import uuid5, NAMESPACE_DNS
-
     query = arguments.get("query", "")
 
-    # TODO: Get user_id from MCP session context
-    # For now, use a fixed demo user ID
-    # Generate consistent UUID from user_id string (same as profile_generation.py)
-    user_id_str = "demo_user"
-    demo_user_id = uuid5(NAMESPACE_DNS, f"iris.user.{user_id_str}")
+    # Get current system user's ID
+    user_id = get_user_id()
 
     # ═══ GATE CHECK: Profile must exist ═══
     # Learning: learning/07_user_profiles/README.md#onboarding-gates
-    if not profile_exists(demo_user_id):
+    if not profile_exists(user_id):
         return [
             TextContent(
                 type="text",
-                text="ONBOARDING_REQUIRED\n\n"
-                     "No profile found. You must complete onboarding before using IRIS.\n\n"
-                     "Call start_onboarding() to begin. This takes ~5 minutes and enables full personalization."
+                text=iris_response(
+                    "ONBOARDING_REQUIRED\n\n"
+                    "No profile found. You must complete onboarding before using IRIS.\n\n"
+                    "Call start_onboarding() to begin. This takes ~5 minutes and enables full personalization."
+                )
             )
         ]
 
-    # Load or create user profile (Segment 2)
+    # Load user profile (Segment 2)
     # Learning: learning/02_data_modeling/README.md#profile-loading
-    profile = await get_or_create_profile(demo_user_id)
+    profile = await get_or_create_profile(user_id)
+
+    # Block if no profile exists (onboarding required)
+    if profile is None:
+        return [
+            types.TextContent(
+                type="text",
+                text="ONBOARDING_REQUIRED\n\nNo profile found. You must complete onboarding before using get_context.\n\nCall start_onboarding() to begin."
+            )
+        ]
 
     # Format profile as markdown for LLM
     profile_text = format_profile_for_llm(profile)
@@ -368,7 +371,7 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
     # Learning: learning/06_memory/README.md#hybrid-retrieval
     try:
         relevant_outputs = await retrieve_relevant_outputs(
-            user_id=demo_user_id,
+            user_id=user_id,
             query=query,
             top_k=5
         )
@@ -377,30 +380,8 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
         # No outputs yet, or retrieval failed
         outputs_text = "*(No past outputs stored yet)*"
 
-    # Build full context response with Janus visual
-    janus_header = """
-    ┌─────────────────────────────────────┐
-    │      JANUS                   │
-    │                                     │
-    │  PAST ◀───          ───▶ PRESENT   │
-    │    ___                ___           │
-    │   /• •\\              /• •\\          │
-    │  ( ←_• )            ( •_→ )         │
-    │   \\___/              \\___/          │
-    │    |▓|                |▓|           │
-    │   /═╬═\\              /═╬═\\          │
-    │  ( ▓▓▓ )            ( ▓▓▓ )         │
-    │   |║║|               |║║|          │
-    │   | | |              | | |         │
-    │  /  |  \\            /  |  \\        │
-    │                                     │
-    │  [Context served from both sides]   │
-    └─────────────────────────────────────┘
-    """
-
-    response = f"""{janus_header}
-
-# Personalized Context for: "{query}"
+    # Build full context response
+    response = f"""# Personalized Context for: "{query}"
 
 {profile_text}
 
@@ -408,14 +389,14 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
 {outputs_text}
 
 ---
-*Served by Janus • Profile: ~/.iris/profiles/{profile.id}.json*
+*Profile: ~/.iris/data/profiles/{profile.id}.json*
 *Retrieval: Hybrid BM25 + vector similarity (Wu et al. 2024)*
 """
 
     return [
         TextContent(
             type="text",
-            text=response
+            text=iris_response(response)
         )
     ]
 
@@ -427,14 +408,16 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
 async def handle_start_onboarding(arguments: dict) -> list[TextContent]:
     """Handle start_onboarding tool call."""
     import json
+    from src.utils import get_system_user
 
-    user_id = arguments.get("user_id", "demo_user")
+    # Use system username (ignore any user_id passed by LLM)
+    user_id = get_system_user()
     result = start_onboarding(user_id)
 
     return [
         TextContent(
             type="text",
-            text=json.dumps(result, indent=2)
+            text=iris_response(json.dumps(result, indent=2))
         )
     ]
 
@@ -442,8 +425,10 @@ async def handle_start_onboarding(arguments: dict) -> list[TextContent]:
 async def handle_store_answer(arguments: dict) -> list[TextContent]:
     """Handle store_answer tool call."""
     import json
+    from src.utils import get_system_user
 
-    user_id = arguments.get("user_id", "demo_user")
+    # Use system username (ignore any user_id passed by LLM)
+    user_id = get_system_user()
     target_id = arguments.get("target_id")
     answer = arguments.get("answer", {})
 
@@ -452,7 +437,7 @@ async def handle_store_answer(arguments: dict) -> list[TextContent]:
     return [
         TextContent(
             type="text",
-            text=json.dumps(result, indent=2)
+            text=iris_response(json.dumps(result, indent=2))
         )
     ]
 
@@ -460,8 +445,10 @@ async def handle_store_answer(arguments: dict) -> list[TextContent]:
 async def handle_get_next_question(arguments: dict) -> list[TextContent]:
     """Handle get_next_question tool call."""
     import json
+    from src.utils import get_system_user
 
-    user_id = arguments.get("user_id", "demo_user")
+    # Use system username (ignore any user_id passed by LLM)
+    user_id = get_system_user()
     result = get_next_question(user_id)
 
     if result is None:
@@ -470,7 +457,7 @@ async def handle_get_next_question(arguments: dict) -> list[TextContent]:
     return [
         TextContent(
             type="text",
-            text=json.dumps(result, indent=2)
+            text=iris_response(json.dumps(result, indent=2))
         )
     ]
 
@@ -478,14 +465,16 @@ async def handle_get_next_question(arguments: dict) -> list[TextContent]:
 async def handle_complete_onboarding(arguments: dict) -> list[TextContent]:
     """Handle complete_onboarding tool call."""
     import json
+    from src.utils import get_system_user
 
-    user_id = arguments.get("user_id", "demo_user")
+    # Use system username (ignore any user_id passed by LLM)
+    user_id = get_system_user()
     result = complete_onboarding(user_id)
 
     return [
         TextContent(
             type="text",
-            text=json.dumps(result, indent=2)
+            text=iris_response(json.dumps(result, indent=2))
         )
     ]
 

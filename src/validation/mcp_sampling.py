@@ -6,10 +6,10 @@ Semantic validation using MCP sampling (calling user's LLM in fresh context).
 
 The "Self-Check Pattern":
 - LLM generates draft (in generation context)
-- KIM requests validation via MCP sampling
+- IRIS requests validation via MCP sampling
 - User's LLM validates in FRESH context (no generation bias)
-- Result returns to KIM
-- KIM combines with deterministic checks
+- Result returns to IRIS
+- IRIS combines with deterministic checks
 
 This is how the LLM gets unbiased feedback on its own output.
 """
@@ -125,6 +125,10 @@ class MCPSamplingValidator:
 
         # Load profile for context
         profile = await get_or_create_profile(user_id)
+
+        # Block if no profile exists (onboarding required)
+        if profile is None:
+            raise ValueError("ONBOARDING_REQUIRED: No profile found. Complete onboarding before using validation.")
 
         prompt = f"""Validate this message for appropriateness and usability.
 
