@@ -731,27 +731,29 @@ if __name__ == "__main__":
             settings["hooks"] = {}
 
         if "SessionStart" not in settings["hooks"]:
-            settings["hooks"]["SessionStart"] = {"hooks": []}
+            settings["hooks"]["SessionStart"] = []
 
-        if "hooks" not in settings["hooks"]["SessionStart"]:
-            settings["hooks"]["SessionStart"]["hooks"] = []
-
-        # Add hook if not already present (check by command path)
+        # Hook entry format: matcher with nested hooks array
         hook_entry = {
-            "command": "python",
-            "args": [str(hook_path)]
+            "matcher": "",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": f'python "{hook_path}"',
+                    "timeout": 5
+                }
+            ]
         }
 
-        # Check if hook already registered
-        hooks_list = settings["hooks"]["SessionStart"]["hooks"]
+        # Check if hook already registered (check by command string)
         already_registered = any(
-            h.get("args", [None])[0] == str(hook_path)
-            for h in hooks_list
+            str(hook_path) in h.get("hooks", [{}])[0].get("command", "")
+            for h in settings["hooks"]["SessionStart"]
             if isinstance(h, dict)
         )
 
         if not already_registered:
-            settings["hooks"]["SessionStart"]["hooks"].append(hook_entry)
+            settings["hooks"]["SessionStart"].append(hook_entry)
 
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2)
