@@ -5,8 +5,8 @@ Embedding Storage
 NumPy-based vector embedding storage for semantic similarity search.
 
 Storage format:
-- ~/.kim/embeddings/{user_id}.npy — NumPy array (N x 768)
-- ~/.kim/embeddings/{user_id}_index.json — Metadata mapping (index → output_id)
+- ~/.iris/embeddings/{user_id}.npy — NumPy array (N x 768)
+- ~/.iris/embeddings/{user_id}_index.json — Metadata mapping (index → output_id)
 
 Example:
     embeddings.npy: [[0.1, 0.2, ...], [0.3, 0.4, ...]]  # shape: (100, 768)
@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from src.storage.file_store import get_kim_root
+from src.storage.file_store import get_iris_root
 
 
 # ═══════════════════════════════════════════════════════════
@@ -39,9 +39,9 @@ class EmbeddingStore:
         Initialize embedding store.
 
         Args:
-            root: Storage root (defaults to ~/.kim/)
+            root: Storage root (defaults to ~/.iris/)
         """
-        self.root = root or get_kim_root()
+        self.root = root or get_iris_root()
         self.embeddings_dir = self.root / "embeddings"
         self.embeddings_dir.mkdir(exist_ok=True)
 

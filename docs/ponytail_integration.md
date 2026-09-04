@@ -2,24 +2,24 @@
 
 ## Overview
 
-**Ponytail** is a code quality plugin that runs as a separate MCP server alongside KIM.
+**Ponytail** is a code quality plugin that runs as a separate MCP server alongside IRIS.
 
 - **Repository:** https://github.com/DietrichGebert/ponytail.git
 - **Purpose:** Code editing, validation, quality checks
-- **Use in KIM:** KIM detects code, recommends validation, LLM uses Ponytail directly
+- **Use in IRIS:** IRIS detects code, recommends validation, LLM uses Ponytail directly
 
 ---
 
-## Architecture: KIM Orchestrates, LLM Uses Tools
+## Architecture: IRIS Orchestrates, LLM Uses Tools
 
 ```
 User: "Write Python code"
   ↓
-Claude Code → KIM: check_draft(code)
+Claude Code → IRIS: check_draft(code)
   ↓
-KIM detects: UseCase.CODING
-KIM runs: Deterministic checks (TODO, print, bare except)
-KIM returns: {
+IRIS detects: UseCase.CODING
+IRIS runs: Deterministic checks (TODO, print, bare except)
+IRIS returns: {
   "deterministic_issues": [...],
   "recommendation": "Validate code quality with available tools",
   "tools_available": ["ponytail_validate"]
@@ -30,12 +30,12 @@ Claude Code → Ponytail MCP server: validate(code)
   ↓
 Ponytail validates and returns quality report
   ↓
-Claude Code combines: KIM deterministic + Ponytail semantic
+Claude Code combines: IRIS deterministic + Ponytail semantic
   ↓
 User sees: Complete validation feedback
 ```
 
-**Key insight:** KIM is an orchestrator, not a validator. The LLM decides which tools to use based on KIM's recommendations.
+**Key insight:** IRIS is an orchestrator, not a validator. The LLM decides which tools to use based on IRIS's recommendations.
 
 ---
 
@@ -43,53 +43,53 @@ User sees: Complete validation feedback
 
 ### 1. MESSAGING (emails, documents)
 ```
-KIM Response:
+IRIS Response:
 ├─ Deterministic checks (tone, format, boundaries)
 ├─ Recommendation: "Standard validation complete"
 └─ Tools needed: None
 
 LLM Action:
-└─ Uses KIM's feedback directly (no additional tools)
+└─ Uses IRIS's feedback directly (no additional tools)
 ```
 
-**No additional tools needed** — KIM's deterministic checks are sufficient
+**No additional tools needed** — IRIS's deterministic checks are sufficient
 
 ---
 
 ### 2. CODING (Python, JS, general programming)
 ```
-KIM Response:
+IRIS Response:
 ├─ Deterministic checks (TODO, print, bare except, security)
 ├─ Recommendation: "Validate code quality with available tools"
 └─ Tools available: ["ponytail_validate", "ponytail_analyze"]
 
 LLM Action:
-├─ Sees KIM's recommendation
+├─ Sees IRIS's recommendation
 ├─ Calls Ponytail: validate(code)
-└─ Combines: KIM deterministic + Ponytail semantic
+└─ Combines: IRIS deterministic + Ponytail semantic
 ```
 
-**Ponytail provides deep analysis** — LLM uses it based on KIM's guidance
+**Ponytail provides deep analysis** — LLM uses it based on IRIS's guidance
 
 ---
 
 ### 3. MENDIX (low-code development)
 ```
-KIM Response:
+IRIS Response:
 ├─ Deterministic checks (entity naming, XML structure)
 ├─ Recommendation: "Mendix content detected, validate structure"
 └─ Tools available: ["mendix_cli_validate"] (if installed)
 
 LLM Action:
-├─ Uses KIM's Mendix-specific feedback
+├─ Uses IRIS's Mendix-specific feedback
 └─ Optionally: Calls Mendix CLI for validation (NOT execution)
 ```
 
-**Note:** Mendix CLI is **beta** — KIM recommends validation only, never execution
+**Note:** Mendix CLI is **beta** — IRIS recommends validation only, never execution
 
 ---
 
-## KIM's Orchestration Response
+## IRIS's Orchestration Response
 
 ### check_draft Response Format:
 
@@ -119,17 +119,17 @@ LLM Action:
 ### How LLM Uses This:
 
 ```
-1. LLM receives KIM's response
+1. LLM receives IRIS's response
 2. LLM sees: recommendation.action = "validate_with_tools"
 3. LLM sees: suggested_tools = ["ponytail_validate"]
 4. LLM calls: ponytail_validate(code)
 5. LLM combines results:
-   - KIM deterministic issues
+   - IRIS deterministic issues
    - Ponytail semantic analysis
 6. LLM presents complete feedback to user
 ```
 
-**KIM guides, LLM executes** — clean separation of concerns
+**IRIS guides, LLM executes** — clean separation of concerns
 
 ---
 
@@ -171,13 +171,13 @@ Based on https://github.com/DietrichGebert/ponytail.git:
 - Quality checks
 - (Exact features TBD — need to inspect plugin code)
 
-**How KIM uses it:**
-1. KIM detects "this is code"
-2. KIM requests validation via MCP sampling
+**How IRIS uses it:**
+1. IRIS detects "this is code"
+2. IRIS requests validation via MCP sampling
 3. User's Claude Code (with Ponytail) validates
 4. Ponytail hooks run automatically (if installed)
-5. Result returns to KIM
-6. KIM combines with deterministic checks
+5. Result returns to IRIS
+6. IRIS combines with deterministic checks
 
 ---
 
@@ -195,7 +195,7 @@ Based on https://github.com/DietrichGebert/ponytail.git:
 - Ask user's LLM: "Is this valid Mendix?" (MCP sampling)
 - Rely on Mendix Studio for actual deployment
 
-**KIM's role:**
+**IRIS's role:**
 - Detect Mendix content
 - Validate patterns (entity names, microflow structure)
 - Provide feedback on best practices
@@ -240,7 +240,7 @@ def test_detect_mendix():
 # tests/integration/test_ponytail_validation.py
 @pytest.mark.skipif(not ponytail_available(), reason="Ponytail not installed")
 async def test_code_validation_with_ponytail():
-    # KIM validates code
+    # IRIS validates code
     # Ponytail should enhance validation
     result = await check_draft(python_code)
     assert result.ponytail_used is True
@@ -254,7 +254,7 @@ async def test_code_validation_with_ponytail():
 ```
 User: "Write a Python function"
 Claude generates code
-KIM validates → basic syntax + semantic check
+IRIS validates → basic syntax + semantic check
 User sees: "✓ Code looks correct"
 ```
 
@@ -262,7 +262,7 @@ User sees: "✓ Code looks correct"
 ```
 User: "Write a Python function"
 Claude generates code
-KIM validates → basic syntax + Ponytail-enhanced quality check
+IRIS validates → basic syntax + Ponytail-enhanced quality check
 User sees: "✓ Code quality verified (complexity: low, coverage: good)"
 ```
 
@@ -274,7 +274,7 @@ User sees: "✓ Code quality verified (complexity: low, coverage: good)"
 
 ### User Config (future):
 ```yaml
-# ~/.kim/config.yaml
+# ~/.iris/config.yaml
 validation:
   use_ponytail: true  # Enable Ponytail integration if available
   mendix:
@@ -288,11 +288,11 @@ validation:
 
 ### Automated (Recommended):
 ```bash
-cd KIM
+cd IRIS
 python install.py
 
 # This installs:
-# ✅ KIM MCP server
+# ✅ IRIS MCP server
 # ✅ Ponytail plugin (code quality)
 # ✅ Mendix CLI check (optional)
 
@@ -301,8 +301,8 @@ python install.py
 
 ### Manual:
 ```bash
-# Install KIM
-cd KIM
+# Install IRIS
+cd IRIS
 pip install -e .
 
 # Install Ponytail
@@ -318,10 +318,10 @@ pip install -e .
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\KIM"
+      "cwd": "C:\\path\\to\\IRIS"
     },
     "ponytail": {
       "command": "python",
@@ -336,14 +336,14 @@ pip install -e .
 
 ## Summary
 
-**What KIM does:**
+**What IRIS does:**
 1. ✅ Detect use case (messaging/coding/Mendix)
 2. ✅ Run deterministic validation
 3. ✅ Recommend which tools LLM should use
 4. ✅ Provide structured guidance
 
 **What LLM does:**
-- Receives KIM's recommendations
+- Receives IRIS's recommendations
 - Decides which tools to invoke
 - Calls Ponytail/Mendix directly (separate MCP servers)
 - Combines all feedback for user
@@ -351,17 +351,17 @@ pip install -e .
 **What Ponytail does:**
 - Runs as separate MCP server
 - Provides code quality tools
-- Used by LLM when KIM recommends it
-- Independent of KIM
+- Used by LLM when IRIS recommends it
+- Independent of IRIS
 
-**What KIM does NOT do:**
+**What IRIS does NOT do:**
 - ❌ Call Ponytail internally (LLM does this)
 - ❌ Execute Mendix CLI (recommend only)
 - ❌ Require any specific tools (graceful degradation)
 - ❌ Force tool usage (LLM decides)
 
 **Philosophy:** 
-- **KIM = Orchestrator** (detects, validates, recommends)
+- **IRIS = Orchestrator** (detects, validates, recommends)
 - **LLM = Executor** (decides, calls tools, combines)
 - **Ponytail/Mendix = Specialists** (domain-specific analysis)
 

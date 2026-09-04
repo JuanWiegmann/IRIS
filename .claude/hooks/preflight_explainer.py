@@ -10,9 +10,9 @@ import sys
 from pathlib import Path
 
 
-# Map file paths to their purpose in KIM's architecture
+# Map file paths to their purpose in IRIS's architecture
 PATH_PURPOSE = {
-    "src/server": "MCP server entry point — how KIM exposes itself to LLMs",
+    "src/server": "MCP server entry point — how IRIS exposes itself to LLMs",
     "src/tools/": "MCP tools — the interface LLMs call into",
     "src/tools/context": "get_context tool — providing profile + relevant examples to the LLM",
     "src/tools/check_draft": "check_draft tool — blind validation of LLM output against profile",

@@ -47,7 +47,7 @@
 
 **Limitation:** Full PDF not accessible. Specific effect sizes, dimension rankings, and minimum profile element counts not extractable from abstract alone.
 
-**Implication for KIM:** Heavy weight on `log_output()` and retrieval of past user-approved text. Onboarding can be lighter if we learn continuously from outputs.
+**Implication for IRIS:** Heavy weight on `log_output()` and retrieval of past user-approved text. Onboarding can be lighter if we learn continuously from outputs.
 
 ---
 
@@ -113,7 +113,7 @@
 
 ## Minimum Viable Profile (MVP)
 
-Based on convergent evidence from all three core papers plus existing KIM documentation:
+Based on convergent evidence from all three core papers plus existing IRIS documentation:
 
 | # | Dimension | Evidence for Inclusion | Minimum Barrier | Can Infer? | Priority |
 |---|-----------|----------------------|-----------------|------------|----------|
@@ -124,7 +124,7 @@ Based on convergent evidence from all three core papers plus existing KIM docume
 | 5 | **Communication boundaries** | Westhaeusser: measurable UX impact | 1 explicit boundary stated | No (privacy-sensitive) | MEDIUM |
 | 6 | **Proactivity preference** | Westhaeusser: user control critical | Binary: suggest vs. ask first | Yes (from early interactions) | MEDIUM |
 | 7 | **Decision style** | GATE: edge-cases reveal priorities | 1 observed conflict resolution | Yes (from queries/conflicts) | LOW |
-| 8 | **Tool/tech preferences** | KIM-specific: needed for context relevance | 2-3 tools/frameworks mentioned | Yes (from queries) | LOW |
+| 8 | **Tool/tech preferences** | IRIS-specific: needed for context relevance | 2-3 tools/frameworks mentioned | Yes (from queries) | LOW |
 
 **Core set (MUST have for basic personalization):** Dimensions 1-3 (3 questions minimum)
 
@@ -209,16 +209,16 @@ Was sind deine Hauptaufgaben? (Beispiele: "Backend Development", "Team Lead", "F
 - Decision priorities (dimension 7)
 
 **Example workflow:**
-1. User asks technical question → KIM provides context
+1. User asks technical question → IRIS provides context
 2. User's LLM generates response → user edits it (makes shorter, changes tone)
-3. KIM logs edit delta → infers: "User prefers shorter, more direct responses"
+3. IRIS logs edit delta → infers: "User prefers shorter, more direct responses"
 4. Next response uses that preference automatically
 
 ---
 
 ## Information Pool Design
 
-**What KIM should provide to the LLM during onboarding:**
+**What IRIS should provide to the LLM during onboarding:**
 
 ### Before Each Question:
 
@@ -417,7 +417,7 @@ if user_edited_response:
         profile.response_format.examples_valued = True
     
     # Ask for confirmation (GATE: validate inferences)
-    kim.ask("Soll ich in Zukunft [inferred_preference]?")
+    iris.ask("Soll ich in Zukunft [inferred_preference]?")
 ```
 
 ### From Query Patterns (Dimension 8: Tool/tech)
@@ -461,9 +461,9 @@ if validation.failed("tone_too_formal"):
 3. **Question ordering effects:** Does starting with edge-cases vs. binary questions impact profile quality?
 4. **Re-validation frequency:** How often should dimensions be re-checked? (e.g., communication style may change in new job)
 5. **Confidence thresholds:** What confidence score justifies using a dimension in `get_context()`? (0.7? 0.8? 0.9?)
-6. **Multi-context profiles:** Should KIM maintain separate sub-profiles for "with manager" vs. "with peers"?
+6. **Multi-context profiles:** Should IRIS maintain separate sub-profiles for "with manager" vs. "with peers"?
 
-### Testable Hypotheses for KIM:
+### Testable Hypotheses for IRIS:
 
 1. **H1:** 10-question onboarding with continuous learning will match 25-question upfront onboarding quality by interaction 10
 2. **H2:** Edge-case questions will have 2x information gain vs. binary questions for dimensions 1, 4, 7
@@ -472,7 +472,7 @@ if validation.failed("tone_too_formal"):
 
 ---
 
-## Recommendation for KIM Implementation
+## Recommendation for IRIS Implementation
 
 ### Phase 1: Minimal Viable Onboarding (Core 5 questions)
 
@@ -513,7 +513,7 @@ if validation.failed("tone_too_formal"):
 
 3. **Question type matters** — GATE proves edge-cases outperform open questions in 60-70% of settings
 
-4. **Outputs > inputs** — Wu et al. show user-approved outputs are the primary driver; KIM must log and learn from every interaction
+4. **Outputs > inputs** — Wu et al. show user-approved outputs are the primary driver; IRIS must log and learn from every interaction
 
 5. **Start small, grow smart** — 5 core questions (2.5 min) get 70-80% of the value; remaining 20-30% comes from usage-based learning
 

@@ -10,7 +10,7 @@
 AI-assisted development suffers from **context amnesia** — every new conversation starts blank. Design decisions, architectural principles, and coding conventions get lost between sessions.
 
 This module covers the persistence architecture that ensures:
-- No conversation ever forgets what KIM is or how to work on it
+- No conversation ever forgets what IRIS is or how to work on it
 - Code changes automatically trigger learning opportunities
 - Progress is visually tracked without manual effort
 

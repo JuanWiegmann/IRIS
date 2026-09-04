@@ -2,7 +2,7 @@
 
 ## Architecture
 
-KIM is an MCP server. There are no internal LLM calls — all logic is deterministic.
+IRIS is an MCP server. There are no internal LLM calls — all logic is deterministic.
 
 - `server.py` is the entry point (MCP server lifecycle)
 - `tools/` contains exposed MCP tools (each file = one tool or tool group)
@@ -21,7 +21,7 @@ KIM is an MCP server. There are no internal LLM calls — all logic is determini
 
 ## Key Rule
 
-**No LLM calls inside KIM.** All intelligence comes from the user's external LLM. KIM is pure logic + data + retrieval.
+**No LLM calls inside IRIS.** All intelligence comes from the user's external LLM. IRIS is pure logic + data + retrieval.
 
 Exception: Layer 2 (`orchestration/`) uses MCP sampling — but that's requesting compute from the USER's LLM, not running one internally.
 

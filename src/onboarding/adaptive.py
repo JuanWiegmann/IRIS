@@ -23,8 +23,9 @@ def detect_profile_type(role: str, ai_usage: str) -> ProfileType:
     Returns:
         ProfileType enum (code_heavy, communication_heavy, architecture, general)
     """
-    role_lower = role.lower()
-    usage_lower = ai_usage.lower()
+    # Handle None values (shouldn't happen, but be defensive)
+    role_lower = (role or "").lower()
+    usage_lower = (ai_usage or "").lower()
 
     # Code-heavy indicators
     code_keywords = [

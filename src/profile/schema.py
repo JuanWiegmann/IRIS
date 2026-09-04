@@ -63,7 +63,7 @@ class UserProfile(BaseModel):
     """
     Complete user profile for personalization.
 
-    This is the primary data structure for KIM. It captures everything
+    This is the primary data structure for IRIS. It captures everything
     the LLM needs to know about how to communicate with this user.
 
     Confidence scores (0.0-1.0) track how much evidence supports each field.
@@ -130,7 +130,7 @@ class UserProfile(BaseModel):
                     "technical": "User has deep technical background"
                 },
                 "confidence": 0.75,
-                "current_projects": ["KIM", "Claude Certified Architect"],
+                "current_projects": ["IRIS", "Claude Certified Architect"],
                 "recent_context": "Working on MCP server implementation"
             }
         }

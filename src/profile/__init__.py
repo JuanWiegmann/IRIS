@@ -2,7 +2,7 @@
 Profile Package
 ===============
 
-User profile management for KIM.
+User profile management for IRIS.
 
 Main exports:
 - UserProfile: Pydantic model for user profiles
@@ -18,9 +18,14 @@ from src.profile.schema import (
     format_profile_for_llm,
 )
 
-from src.storage.file_store import (
+from src.profile.store import (
     get_or_create_profile,
-    get_profile_store,
+    get_default_store as get_profile_store,
+)
+
+from src.profile.store import (
+    profile_exists,
+    get_profile,
 )
 
 __all__ = [
@@ -33,4 +38,6 @@ __all__ = [
     # Store
     "get_or_create_profile",
     "get_profile_store",
+    "profile_exists",
+    "get_profile",
 ]

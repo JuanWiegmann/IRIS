@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This checklist defines the **minimum research-backed targets** KIM must satisfy during onboarding to be effective as a personalization middleware. Each target has a scientific basis, a barrier (what counts as "satisfied"), and a usage description (how it improves LLM responses later).
+This checklist defines the **minimum research-backed targets** IRIS must satisfy during onboarding to be effective as a personalization middleware. Each target has a scientific basis, a barrier (what counts as "satisfied"), and a usage description (how it improves LLM responses later).
 
-**Design principle:** KIM provides targets + validation. The LLM freely decides HOW to reach each target. KIM only checks if the barrier is met.
+**Design principle:** IRIS provides targets + validation. The LLM freely decides HOW to reach each target. IRIS only checks if the barrier is met.
 
 ---
 

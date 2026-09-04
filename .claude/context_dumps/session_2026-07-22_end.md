@@ -2,10 +2,10 @@
 
 ## 1. Mental Model
 
-### What KIM IS
-KIM is a "personality card" that follows you across all LLMs. It's invisible middleware — an MCP server that any LLM connects to. It doesn't DO anything for the user. It only KNOWS things about the user and shares that knowledge with whatever LLM the user is talking to.
+### What IRIS IS
+IRIS is a "personality card" that follows you across all LLMs. It's invisible middleware — an MCP server that any LLM connects to. It doesn't DO anything for the user. It only KNOWS things about the user and shares that knowledge with whatever LLM the user is talking to.
 
-When the user asks Claude to write an email, Claude calls KIM: "How should I present this to this user?" KIM responds with profile + relevant examples + style rules. Claude then generates the email using that context. KIM never touches the email itself.
+When the user asks Claude to write an email, Claude calls IRIS: "How should I present this to this user?" IRIS responds with profile + relevant examples + style rules. Claude then generates the email using that context. IRIS never touches the email itself.
 
 ### The Architecture (evolved during this session)
 Started as: "multi-agent system with local Ollama + Bedrock Claude"
@@ -14,13 +14,13 @@ Evolved to: "pure MCP server, no LLM inside, user's LLM does everything"
 The shift happened because:
 - Why run a local LLM when the user's LLM is right there and more powerful?
 - Why build internal agents when the user's LLM can follow instructions (Anleitung)?
-- KIM should be zero-install: just connect MCP, done.
+- IRIS should be zero-install: just connect MCP, done.
 
 ### The Self-Check Trick
-`check_draft` is the clever pattern. When the LLM writes an email and calls `check_draft`, it THINKS it's asking an external expert. But KIM just compares the draft against stored profile rules. The LLM gets independent feedback it couldn't give itself (because you can't judge your own work in the same context window). Deterministic, no LLM needed inside KIM.
+`check_draft` is the clever pattern. When the LLM writes an email and calls `check_draft`, it THINKS it's asking an external expert. But IRIS just compares the draft against stored profile rules. The LLM gets independent feedback it couldn't give itself (because you can't judge your own work in the same context window). Deterministic, no LLM needed inside IRIS.
 
 ### The Onboarding Philosophy
-KIM defines research-backed TARGETS (what to learn). Each target has a BARRIER (minimum evidence). The LLM sees open targets and FREELY decides strategy (edge-case question, binary, direct ask, observation). KIM never dictates HOW to ask — only WHAT needs to be known.
+IRIS defines research-backed TARGETS (what to learn). Each target has a BARRIER (minimum evidence). The LLM sees open targets and FREELY decides strategy (edge-case question, binary, direct ask, observation). IRIS never dictates HOW to ask — only WHAT needs to be known.
 
 Example target: "response_format" — barrier: "user must have explicitly chosen between concise vs detailed in at least one interaction"
 
@@ -29,10 +29,10 @@ Counterintuitive but proven: what the user WROTE/CHOSE/APPROVED drives personali
 
 ### Two Layers
 - Layer 1: Any MCP client. Tools + Anleitung (instructions in tool descriptions). LLM follows protocol.
-- Layer 2: Advanced clients (Claude). MCP sampling — KIM orchestrates with fresh context per step. Better isolation.
+- Layer 2: Advanced clients (Claude). MCP sampling — IRIS orchestrates with fresh context per step. Better isolation.
 
 ### Scope
-Personalization + light cross-session memory. NOT task execution, NOT workflow orchestration, NOT tool integration. KIM answers "how should I talk to this person" — never "do this for the person."
+Personalization + light cross-session memory. NOT task execution, NOT workflow orchestration, NOT tool integration. IRIS answers "how should I talk to this person" — never "do this for the person."
 
 Light memory = "user works on Skillfinder project, recently escalated API-key issue" (cross-LLM, cross-session context).
 
@@ -40,8 +40,8 @@ Light memory = "user works on Skillfinder project, recently escalated API-key is
 
 | Decision | Why | Rejected Alternative |
 |----------|-----|---------------------|
-| KIM = MCP server, no internal LLM | User's LLM is more powerful, zero install | Multi-agent with Ollama |
-| User's LLM does ALL reasoning | Best quality comes from the main model | KIM generates responses internally |
+| IRIS = MCP server, no internal LLM | User's LLM is more powerful, zero install | Multi-agent with Ollama |
+| User's LLM does ALL reasoning | Best quality comes from the main model | IRIS generates responses internally |
 | check_draft as blind validator | Independent feedback LLM can't give itself | LLM self-validates (unreliable) |
 | Research-based onboarding targets | Scientific backing for what to collect | Arbitrary preference questions |
 | Tools start broad, split later | Can't predict usage patterns upfront | Design all tools upfront |
@@ -77,8 +77,8 @@ ONBOARDING_GATE_DESIGN.md          — Original design doc (pre-dates current ar
 .claude/skills/status/SKILL.md     — /status skill (show build state)
 
 learning/00_setup/README.md        — Module 0: persistence architecture explained
-docs/diagrams/kim_system_logic.tex — Full LaTeX system diagram
-docs/diagrams/kim_logic_v6.pdf     — Compiled PDF (current version)
+docs/diagrams/iris_system_logic.tex — Full LaTeX system diagram
+docs/diagrams/iris_logic_v6.pdf     — Compiled PDF (current version)
 docs/onboarding_targets_checklist.md — Research TODOs + preliminary targets
 
 tests/unit/test_example.py         — Placeholder test

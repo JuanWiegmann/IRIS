@@ -2,7 +2,7 @@
 Onboarding Session Storage
 
 File-based persistence for onboarding sessions.
-Location: ~/.kim/onboarding/{user_id}/{session_id}.json
+Location: ~/.iris/onboarding/{user_id}/{session_id}.json
 """
 
 import json
@@ -18,7 +18,7 @@ class OnboardingStore:
     Store and retrieve onboarding sessions.
 
     Storage structure:
-    ~/.kim/
+    ~/.iris/
       onboarding/
         {user_id}/
           active_session.json         # Current active session
@@ -29,7 +29,7 @@ class OnboardingStore:
     def __init__(self, base_path: Optional[Path] = None):
         """Initialize store."""
         if base_path is None:
-            base_path = Path.home() / ".kim" / "onboarding"
+            base_path = Path.home() / ".iris" / "onboarding"
         self.base_path = base_path
         self.base_path.mkdir(parents=True, exist_ok=True)
 

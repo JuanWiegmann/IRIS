@@ -1,4 +1,4 @@
-# KIM MCP Server Setup Guide
+# IRIS MCP Server Setup Guide
 
 ## Prerequisites
 
@@ -8,10 +8,10 @@
 
 ---
 
-## Step 1: Install KIM Dependencies
+## Step 1: Install IRIS Dependencies
 
 ```bash
-cd C:\Users\AV013EV\dev\work\KIM
+cd C:\Users\AV013EV\dev\work\IRIS
 
 # Install with pip
 python -m pip install -e .
@@ -27,7 +27,7 @@ python -m src.inspect
 
 **⚠️ THIS IS OPTIONAL!**
 
-KIM works WITHOUT an OpenAI API key:
+IRIS works WITHOUT an OpenAI API key:
 - ✅ Validation works (uses YOUR LLM via MCP)
 - ✅ Draft checking works (deterministic rules)
 - ✅ Profile storage works
@@ -46,7 +46,7 @@ $env:OPENAI_API_KEY = "sk-your-key-here"
 
 **Get API key:** https://platform.openai.com/api-keys
 
-**Skip this step:** KIM works fine without it!
+**Skip this step:** IRIS works fine without it!
 
 ---
 
@@ -62,13 +62,13 @@ Full path: `C:\Users\AV013EV\AppData\Roaming\Claude\claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\Users\\AV013EV\\dev\\work\\KIM",
+      "cwd": "C:\\Users\\AV013EV\\dev\\work\\IRIS",
       "env": {
         "OPENAI_API_KEY": "sk-your-key-here",
-        "KIM_LOG_LEVEL": "DEBUG"
+        "IRIS_LOG_LEVEL": "DEBUG"
       }
     }
   }
@@ -78,22 +78,22 @@ Full path: `C:\Users\AV013EV\AppData\Roaming\Claude\claude_desktop_config.json`
 **Notes:**
 - Use double backslashes `\\` in Windows paths
 - Replace `sk-your-key-here` with your actual key
-- `KIM_LOG_LEVEL=DEBUG` enables detailed logging
+- `IRIS_LOG_LEVEL=DEBUG` enables detailed logging
 
 ### Option B: Claude Code CLI
 
-Create `mcp_config.json` in KIM directory:
+Create `mcp_config.json` in IRIS directory:
 
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\Users\\AV013EV\\dev\\work\\KIM",
+      "cwd": "C:\\Users\\AV013EV\\dev\\work\\IRIS",
       "env": {
         "OPENAI_API_KEY": "sk-your-key-here",
-        "KIM_LOG_LEVEL": "DEBUG"
+        "IRIS_LOG_LEVEL": "DEBUG"
       }
     }
   }
@@ -118,7 +118,7 @@ claude --mcp-config mcp_config.json
 
 ---
 
-## Step 5: Verify KIM is Connected
+## Step 5: Verify IRIS is Connected
 
 In Claude Code, ask:
 
@@ -131,11 +131,11 @@ What MCP tools are available?
 - `log_output` - Store user outputs
 - `check_draft` - Validate drafts
 
-If you see these, **KIM is connected!** ✅
+If you see these, **IRIS is connected!** ✅
 
 ---
 
-## Step 6: Test KIM
+## Step 6: Test IRIS
 
 ### Test 1: Check Context (should work immediately)
 
@@ -178,18 +178,18 @@ Call check_draft with:
 
 ## Logs: Where to Find Them
 
-KIM logs to two places:
+IRIS logs to two places:
 
-### 1. KIM Server Log (detailed backend)
+### 1. IRIS Server Log (detailed backend)
 
-**Location:** `~/.kim/logs/kim_server.log`
+**Location:** `~/.iris/logs/iris_server.log`
 
-Full path: `C:\Users\AV013EV\.kim\logs\kim_server.log`
+Full path: `C:\Users\AV013EV\.iris\logs\iris_server.log`
 
 **View in real-time:**
 ```bash
 # PowerShell
-Get-Content C:\Users\AV013EV\.kim\logs\kim_server.log -Wait -Tail 50
+Get-Content C:\Users\AV013EV\.iris\logs\iris_server.log -Wait -Tail 50
 
 # OR use the log viewer
 python -m src.log_viewer
@@ -208,7 +208,7 @@ python -m src.log_viewer
 
 ## Log Viewer
 
-KIM includes a log analyzer:
+IRIS includes a log analyzer:
 
 ```bash
 # View recent activity
@@ -235,14 +235,14 @@ python -m src.log_viewer --follow
 # Test server directly
 python -m src.server
 
-# Should show: "KIM MCP Server starting..."
+# Should show: "IRIS MCP Server starting..."
 # Press Ctrl+C to stop
 ```
 
 **Common issues:**
 - Python not in PATH → Use full path to python.exe
 - Dependencies missing → Run `pip install -e .` again
-- Port conflict → KIM uses stdio (no port needed)
+- Port conflict → IRIS uses stdio (no port needed)
 
 ### Tools Not Appearing
 
@@ -255,7 +255,7 @@ python -c "import json; print(json.load(open('mcp_config.json')))"
 **Check paths:**
 - Use absolute paths (not relative)
 - Use double backslashes on Windows
-- Verify `cwd` points to KIM directory
+- Verify `cwd` points to IRIS directory
 
 ### OpenAI API Errors
 
@@ -291,22 +291,22 @@ python -m src.inspect
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | Required | OpenAI API key for embeddings |
-| `KIM_LOG_LEVEL` | `INFO` | Log level: DEBUG, INFO, WARNING, ERROR |
-| `KIM_DATA_DIR` | `~/.kim` | Where to store data |
+| `IRIS_LOG_LEVEL` | `INFO` | Log level: DEBUG, INFO, WARNING, ERROR |
+| `IRIS_DATA_DIR` | `~/.iris` | Where to store data |
 
 ### Example: Change Data Directory
 
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\Users\\AV013EV\\dev\\work\\KIM",
+      "cwd": "C:\\Users\\AV013EV\\dev\\work\\IRIS",
       "env": {
         "OPENAI_API_KEY": "sk-...",
-        "KIM_DATA_DIR": "C:\\KIM_Data",
-        "KIM_LOG_LEVEL": "DEBUG"
+        "IRIS_DATA_DIR": "C:\\IRIS_Data",
+        "IRIS_LOG_LEVEL": "DEBUG"
       }
     }
   }
@@ -319,31 +319,31 @@ python -m src.inspect
 
 Once connected:
 
-1. **Onboard KIM** (future: Segment 5)
-   - Manually edit `~/.kim/profiles/{user_id}.json`
+1. **Onboard IRIS** (future: Segment 5)
+   - Manually edit `~/.iris/profiles/{user_id}.json`
    - Set your tone, format preferences, boundaries
 
-2. **Use KIM naturally:**
+2. **Use IRIS naturally:**
    - Ask Claude to write emails, documents, code
    - Claude calls `get_context()` automatically
    - Claude calls `check_draft()` to validate
    - Claude calls `log_output()` to remember
 
-3. **Inspect what KIM learns:**
+3. **Inspect what IRIS learns:**
    ```bash
    python -m src.inspect
    python -m src.log_viewer
    ```
 
 4. **Monitor logs:**
-   - Watch `~/.kim/logs/kim_server.log`
+   - Watch `~/.iris/logs/iris_server.log`
    - See every tool call, validation, embedding
 
 ---
 
 ## Advanced: Multiple Profiles
 
-KIM currently uses demo user ID. To support multiple profiles:
+IRIS currently uses demo user ID. To support multiple profiles:
 
 **TODO (future):** MCP session authentication
 - Extract user from Claude session
@@ -357,8 +357,8 @@ KIM currently uses demo user ID. To support multiple profiles:
 ## Support
 
 **Issues:**
-- GitHub: https://github.com/you/KIM/issues
-- Logs: Share `~/.kim/logs/kim_server.log`
+- GitHub: https://github.com/you/IRIS/issues
+- Logs: Share `~/.iris/logs/iris_server.log`
 
 **Documentation:**
 - Architecture: `ARCHITECTURE.md`

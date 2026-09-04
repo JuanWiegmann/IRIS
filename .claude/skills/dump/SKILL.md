@@ -13,8 +13,8 @@ When the user invokes this skill, create a comprehensive context dump file at `.
 - How you CURRENTLY understand the project's purpose and philosophy
 - The reasoning chain that led to the current architecture (not just the conclusion)
 - Any corrections the user made to your understanding — capture the CORRECTED version
-- Analogies or mental models that clarify the design ("KIM is like X")
-- Subtle distinctions the user emphasized (e.g., "KIM KNOWS things, doesn't DO things")
+- Analogies or mental models that clarify the design ("IRIS is like X")
+- Subtle distinctions the user emphasized (e.g., "IRIS KNOWS things, doesn't DO things")
 
 ### 2. Decisions Made This Session
 - Architecture decisions, scope changes, design choices
@@ -29,7 +29,7 @@ When the user invokes this skill, create a comprehensive context dump file at `.
 
 ### 4. Key Concepts & Research
 - Technical concepts, patterns, or research findings discussed
-- For papers: include the actual findings that matter for KIM, not just citations
+- For papers: include the actual findings that matter for IRIS, not just citations
 - For patterns: explain the mechanism (how it works), not just the name
 - Design tricks or clever solutions (e.g., the self-check pattern — explain WHY it works)
 

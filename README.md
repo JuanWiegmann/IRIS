@@ -1,12 +1,12 @@
-# KIM — Knowledge & Interaction Middleware
+# IRIS — Knowledge & Interaction Middleware
 
 **Personalized AI communication layer for ANY LLM**
 
-KIM is an MCP middleware server that provides personalization, validation, and memory to Claude Code, ChatGPT, Copilot, and any MCP-capable LLM.
+IRIS is an MCP middleware server that provides personalization, validation, and memory to Claude Code, ChatGPT, Copilot, and any MCP-capable LLM.
 
 ---
 
-## What KIM Does
+## What IRIS Does
 
 - **📝 Personalizes responses** — Learns your tone, format preferences, and boundaries
 - **✅ Validates drafts** — Checks emails, code, and documents before showing them to you
@@ -20,11 +20,11 @@ KIM is an MCP middleware server that provides personalization, validation, and m
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/you/KIM.git
-cd KIM
+git clone https://github.com/you/IRIS.git
+cd IRIS
 ```
 
-### 2. Install KIM
+### 2. Install IRIS
 
 **For Users (Simple):**
 ```bash
@@ -40,7 +40,7 @@ python -m pip install -e .
 
 **OpenAI API key is OPTIONAL!**
 
-KIM works WITHOUT it:
+IRIS works WITHOUT it:
 - ✅ Validation (uses your LLM via MCP)
 - ✅ Draft checking
 - ✅ Profile storage
@@ -57,14 +57,38 @@ The setup script will ask, or press Enter to skip.
 
 Close and reopen Claude Code completely.
 
-### 5. Test KIM
+### 5. Start IRIS Onboarding
+
+**IRIS needs to learn your preferences first** (~5 minutes, 10 questions).
+
+Navigate to the IRIS directory in your terminal:
+```bash
+cd IRIS
+claude
+```
+
+**Two ways to start:**
+
+**Option A (Automatic):** SessionStart hook detects no profile → prompts onboarding
+
+**Option B (Manual):** Type `/startIris` or say "Start IRIS onboarding"
+
+Answer questions about:
+- Communication style (tone, formality)
+- Format preferences (length, structure)
+- Professional boundaries
+- Work context
+
+Profile saved to: `~/.iris/profiles/demo_user.json`
+
+### 6. Test IRIS
 
 In Claude Code, ask:
 ```
 What MCP tools are available?
 ```
 
-You should see: `get_context`, `log_output`, `check_draft`
+You should see: `get_context`, `log_output`, `check_draft`, `start_onboarding`
 
 ---
 
@@ -73,21 +97,21 @@ You should see: `get_context`, `log_output`, `check_draft`
 ```
 You: "Write an email to the team"
 
-Your LLM → KIM: get_context("email to team")
-KIM → Your LLM: Profile + past emails (ranked by relevance)
+Your LLM → IRIS: get_context("email to team")
+IRIS → Your LLM: Profile + past emails (ranked by relevance)
 
 Your LLM generates draft using personalized context
 
-Your LLM → KIM: check_draft(draft)
-KIM → Your LLM: ✅ Passed OR ❌ Issues found (fix before showing)
+Your LLM → IRIS: check_draft(draft)
+IRIS → Your LLM: ✅ Passed OR ❌ Issues found (fix before showing)
 
 Your LLM → You: Personalized, validated email
 
-Your LLM → KIM: log_output(final_email)
-KIM: Stores + embeds for future retrieval
+Your LLM → IRIS: log_output(final_email)
+IRIS: Stores + embeds for future retrieval
 ```
 
-**The magic:** Your LLM self-validates using KIM as an independent oracle.
+**The magic:** Your LLM self-validates using IRIS as an independent oracle.
 
 ---
 
@@ -95,7 +119,7 @@ KIM: Stores + embeds for future retrieval
 
 ### ✅ Built (MVP Ready)
 
-- **File-based storage** — 100% transparent (`~/.kim/` JSON files)
+- **File-based storage** — 100% transparent (`~/.iris/` JSON files)
 - **Hybrid retrieval** — BM25 keyword + vector similarity
 - **Use-case detection** — Messaging vs Coding vs Mendix
 - **Draft validation** — Deterministic rules + semantic checks
@@ -151,10 +175,10 @@ KIM: Stores + embeds for future retrieval
 
 ## Storage
 
-**Location:** `~/.kim/`
+**Location:** `~/.iris/`
 
 ```
-~/.kim/
+~/.iris/
 ├── profiles/
 │   └── {user_id}.json          # Your profile (tone, style, boundaries)
 ├── outputs/
@@ -164,7 +188,7 @@ KIM: Stores + embeds for future retrieval
 ├── embeddings/
 │   └── {user_id}.npy           # Vector embeddings (NumPy)
 └── logs/
-    └── kim_server.log          # Detailed operation logs
+    └── iris_server.log          # Detailed operation logs
 ```
 
 **Inspect storage:**
@@ -188,7 +212,7 @@ python -m src.log_viewer --follow
 - Embedding operations
 - Performance timing
 
-**Log location:** `~/.kim/logs/kim_server.log`
+**Log location:** `~/.iris/logs/iris_server.log`
 
 ---
 
@@ -215,13 +239,13 @@ python -m src.log_viewer --follow
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\KIM",
+      "cwd": "C:\\path\\to\\IRIS",
       "env": {
         "OPENAI_API_KEY": "sk-your-key",
-        "KIM_LOG_LEVEL": "INFO"
+        "IRIS_LOG_LEVEL": "INFO"
       }
     }
   }
@@ -230,8 +254,8 @@ python -m src.log_viewer --follow
 
 **Environment variables:**
 - `OPENAI_API_KEY` — Required for embeddings
-- `KIM_LOG_LEVEL` — DEBUG/INFO/WARNING/ERROR
-- `KIM_DATA_DIR` — Storage location (default: `~/.kim/`)
+- `IRIS_LOG_LEVEL` — DEBUG/INFO/WARNING/ERROR
+- `IRIS_DATA_DIR` — Storage location (default: `~/.iris/`)
 
 ---
 
@@ -276,8 +300,8 @@ See [CLAUDE.md](CLAUDE.md) for project conventions and design principles.
 
 ## Support
 
-- **Issues:** https://github.com/you/KIM/issues
-- **Logs:** Share `~/.kim/logs/kim_server.log`
+- **Issues:** https://github.com/you/IRIS/issues
+- **Logs:** Share `~/.iris/logs/iris_server.log`
 
 ---
 

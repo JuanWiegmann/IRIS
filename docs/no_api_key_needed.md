@@ -1,8 +1,8 @@
-# Why KIM Doesn't Need OpenAI API Key
+# Why IRIS Doesn't Need OpenAI API Key
 
 ## Summary
 
-**KIM works WITHOUT an OpenAI API key** for all core functionality.
+**IRIS works WITHOUT an OpenAI API key** for all core functionality.
 
 ---
 
@@ -18,7 +18,7 @@
    - Security patterns (hardcoded credentials, SQL injection)
 
 2. **Semantic validation** — Uses YOUR LLM via MCP sampling
-   - KIM calls back to your LLM (Claude Code)
+   - IRIS calls back to your LLM (Claude Code)
    - Your LLM validates in fresh context
    - No OpenAI API needed
    - No additional cost (uses your Claude subscription)
@@ -27,11 +27,11 @@
 ```
 Your LLM generates draft
   ↓
-KIM: check_draft(draft)
+IRIS: check_draft(draft)
   ├─ Deterministic checks (no API)
   └─ MCP sampling → YOUR LLM validates (no OpenAI!)
   ↓
-KIM returns feedback
+IRIS returns feedback
   ↓
 Your LLM revises if needed
 ```
@@ -40,7 +40,7 @@ Your LLM revises if needed
 
 ### ✅ Profile Storage
 
-- Stores your preferences in `~/.kim/profiles/`
+- Stores your preferences in `~/.iris/profiles/`
 - Pure file I/O (no API needed)
 - Reads tone, format, boundaries
 
@@ -59,12 +59,12 @@ Your LLM revises if needed
 ### 📊 Semantic Search (Embeddings Only)
 
 **When you call `log_output()`:**
-- KIM tries to embed the text with OpenAI
+- IRIS tries to embed the text with OpenAI
 - If no API key: Skips embedding, stores text only
 - **Result:** Retrieval uses BM25 only (keyword search)
 
 **When you call `get_context()`:**
-- KIM tries hybrid search (BM25 + vector)
+- IRIS tries hybrid search (BM25 + vector)
 - If no embeddings: Falls back to BM25 only
 - **Result:** Still returns relevant outputs (keyword-based)
 
@@ -91,7 +91,7 @@ Your LLM revises if needed
 ### MCP Sampling (No API Key Needed)
 
 **What it is:**
-- KIM calls YOUR LLM (Claude Code) in fresh context
+- IRIS calls YOUR LLM (Claude Code) in fresh context
 - User's Claude subscription covers it
 - No OpenAI involved
 
@@ -102,7 +102,7 @@ Your LLM revises if needed
 
 **How it works:**
 ```python
-# KIM requests validation from YOUR LLM
+# IRIS requests validation from YOUR LLM
 response = await request_sampling(
     prompt="Validate this draft: ...",
     model_preferences=["haiku", "sonnet"]
@@ -137,7 +137,7 @@ response = await request_sampling(
 3. **Graceful degradation** — Works without embeddings
 4. **Cost control** — User decides if semantic search is worth $0.02/1M tokens
 
-**Philosophy:** KIM augments your LLM, doesn't replace or require additional services
+**Philosophy:** IRIS augments your LLM, doesn't replace or require additional services
 
 ---
 
@@ -148,10 +148,10 @@ response = await request_sampling(
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\KIM"
+      "cwd": "C:\\path\\to\\IRIS"
     }
   }
 }
@@ -169,10 +169,10 @@ response = await request_sampling(
 ```json
 {
   "mcpServers": {
-    "kim": {
+    "iris": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "C:\\path\\to\\KIM",
+      "cwd": "C:\\path\\to\\IRIS",
       "env": {
         "OPENAI_API_KEY": "sk-your-key"
       }
@@ -190,11 +190,11 @@ response = await request_sampling(
 
 ## Summary
 
-**KIM's core value proposition works WITHOUT OpenAI:**
+**IRIS's core value proposition works WITHOUT OpenAI:**
 - Your LLM generates content
-- KIM validates it (deterministic + MCP sampling)
-- KIM stores it (file-based)
-- KIM retrieves it (BM25 keyword search)
+- IRIS validates it (deterministic + MCP sampling)
+- IRIS stores it (file-based)
+- IRIS retrieves it (BM25 keyword search)
 
 **OpenAI is just an enhancement:**
 - Adds semantic search

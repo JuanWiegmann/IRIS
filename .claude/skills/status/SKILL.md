@@ -1,6 +1,6 @@
 # Status Skill
 
-When invoked, explain KIM's current build state: what exists, what's next, and why.
+When invoked, explain IRIS's current build state: what exists, what's next, and why.
 
 ## Instructions
 
@@ -12,7 +12,7 @@ When invoked, explain KIM's current build state: what exists, what's next, and w
 2. **Present status in this format:**
 
    ```
-   ## KIM Build Status — <Current Date>
+   ## IRIS Build Status — <Current Date>
    
    **Current Segment:** <Number and name>
    **Progress:** <What's complete> ✅ | <What's next> ⏳
@@ -27,7 +27,7 @@ When invoked, explain KIM's current build state: what exists, what's next, and w
    <One paragraph explaining why the current step comes before later ones>
    
    ### Quick Context
-   <2-3 sentences: What KIM is, what it will do when complete>
+   <2-3 sentences: What IRIS is, what it will do when complete>
    ```
 
 3. **Be specific:**
@@ -40,7 +40,7 @@ When invoked, explain KIM's current build state: what exists, what's next, and w
 ## Example Output
 
 ```
-## KIM Build Status — 2026-07-22
+## IRIS Build Status — 2026-07-22
 
 **Current Segment:** Segment 0 (Project Skeleton) — Complete ✅
 **Next:** Segment 1 (LLM Abstraction Layer) ⏳
@@ -59,7 +59,7 @@ Segment 1 will build the LLM abstraction layer — a unified interface for both 
 We need the abstraction layer before building agents because the Coordinator/Operator/Validator/Generator will all make LLM calls. Building it first means we write those agents once, not twice (once per provider).
 
 ### Quick Context
-KIM is a multi-agent communication assistant for VW Group that learns user preferences through GATE onboarding and adapts over time. It orchestrates Ollama + Claude Bedrock with a four-agent pipeline (Coordinator → Operator → Validator → Generator) backed by three-tier memory (STM/Summary/LTM).
+IRIS is a multi-agent communication assistant for VW Group that learns user preferences through GATE onboarding and adapts over time. It orchestrates Ollama + Claude Bedrock with a four-agent pipeline (Coordinator → Operator → Validator → Generator) backed by three-tier memory (STM/Summary/LTM).
 ```
 
 ## When NOT to use this skill

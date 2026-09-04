@@ -6,15 +6,10 @@ Converts collected onboarding answers into UserProfile with confidence scores.
 Research: Wu 2024 shows profile-driven personalization improves quality.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 from src.onboarding.schema import OnboardingSession
-from src.profile.schema import (
-    FormatPreference,
-    ResponseBoundary,
-    TonePreference,
-    UserProfile,
-)
+from src.profile.schema import FormatPreference, Tone, UserProfile
 
 
 def generate_profile_from_onboarding(session: OnboardingSession) -> UserProfile:
@@ -41,16 +36,23 @@ def generate_profile_from_onboarding(session: OnboardingSession) -> UserProfile:
     # Extract boundaries
     boundaries = _extract_boundaries(session)
 
+    # Extract projects
+    projects = _extract_projects(session)
+
+    # Extract recent context
+    recent_context = _extract_recent_context(session)
+
     # Calculate overall confidence
     overall_confidence = session.get_core_satisfaction_rate()
 
     # Build profile
     profile = UserProfile(
-        user_id=session.user_id,
         language=language,
         tone=tone,
         format_preference=format_pref,
         boundaries=boundaries,
+        current_projects=projects,
+        recent_context=recent_context,
         confidence=overall_confidence,
     )
 
@@ -73,36 +75,15 @@ def _extract_language(session: OnboardingSession) -> str:
     return chosen
 
 
-def _extract_tone(session: OnboardingSession) -> TonePreference:
-    """Extract tone preferences from communication_formality target."""
-    # Default: professional but not formal
-    tone = TonePreference.PROFESSIONAL
-
-    # Check communication_formality target
-    if "communication_formality" in session.targets:
-        target = session.targets["communication_formality"]
-        if target.evidence:
-            answer = target.evidence[-1]["data"]
-            chosen = answer.get("chosen_option", "contextual")
-
-            if chosen == "direct":
-                tone = TonePreference.DIRECT
-            elif chosen == "contextual":
-                tone = TonePreference.PROFESSIONAL
-            elif chosen == "adaptive":
-                tone = TonePreference.PROFESSIONAL  # Middle ground
-
-    return tone
+def _extract_tone(session: OnboardingSession) -> list[Tone]:
+    """Extract tone preferences."""
+    # Default: professional
+    return [Tone.PROFESSIONAL]
 
 
 def _extract_format_preference(session: OnboardingSession) -> FormatPreference:
-    """Extract format preferences from technical_depth and other targets."""
-    # Default: balanced
-    detail_level = "balanced"
-    include_examples = True
-    structure = "mixed"
-
-    # Technical depth
+    """Extract format preferences from technical_depth."""
+    # Check technical_depth target
     if "technical_depth" in session.targets:
         target = session.targets["technical_depth"]
         if target.evidence:
@@ -110,48 +91,17 @@ def _extract_format_preference(session: OnboardingSession) -> FormatPreference:
             chosen = answer.get("chosen_option")
 
             if chosen == "high_level":
-                detail_level = "concise"
-                structure = "bullets"
+                return FormatPreference.CONCISE
             elif chosen == "detailed":
-                detail_level = "comprehensive"
-                structure = "structured"
-                include_examples = True
-            elif chosen == "adaptive":
-                detail_level = "balanced"
+                return FormatPreference.DETAILED
 
-    # Code documentation style
-    if "code_documentation_style" in session.targets:
-        target = session.targets["code_documentation_style"]
-        if target.evidence:
-            answer = target.evidence[-1]["data"]
-            chosen = answer.get("chosen_option")
-
-            if chosen == "minimal":
-                # User prefers clean code, minimal comments
-                pass  # Already reflected in detail_level
-            elif chosen == "documented":
-                include_examples = True
-
-    # Learning approach
-    example_first = False
-    if "learning_approach" in session.targets:
-        target = session.targets["learning_approach"]
-        if target.evidence:
-            answer = target.evidence[-1]["data"]
-            chosen = answer.get("chosen_option")
-            example_first = chosen == "example_first"
-
-    return FormatPreference(
-        detail_level=detail_level,
-        include_examples=include_examples,
-        structure=structure,
-        example_first=example_first,
-    )
+    # Default: concise
+    return FormatPreference.CONCISE
 
 
-def _extract_boundaries(session: OnboardingSession) -> List[ResponseBoundary]:
-    """Extract boundaries from privacy and proactivity targets."""
-    boundaries = []
+def _extract_boundaries(session: OnboardingSession) -> dict[str, str]:
+    """Extract boundaries from onboarding targets."""
+    boundaries = {}
 
     # Privacy boundary
     if "privacy" in session.targets:
@@ -161,36 +111,65 @@ def _extract_boundaries(session: OnboardingSession) -> List[ResponseBoundary]:
             chosen = answer.get("chosen_option", "preferences_only")
 
             if chosen == "no_storage":
-                boundaries.append(
-                    ResponseBoundary(
-                        type="privacy",
-                        description="Do not store any personal or project information",
-                    )
-                )
+                boundaries["privacy"] = "Do not store any personal or project information"
             elif chosen == "preferences_only":
-                boundaries.append(
-                    ResponseBoundary(
-                        type="privacy",
-                        description="Store preferences only, no specific project details",
-                    )
-                )
+                boundaries["privacy"] = "Store preferences only, no specific project details"
 
     # Proactivity boundary
     if "proactivity" in session.targets:
         target = session.targets["proactivity"]
         if target.evidence:
             answer = target.evidence[-1]["data"]
-            chosen = answer.get("chosen_option", "proactive")
+            answer_text = answer.get("answer", "")
 
-            if chosen == "reactive":
-                boundaries.append(
-                    ResponseBoundary(
-                        type="proactivity",
-                        description="Only answer what's asked, no unsolicited suggestions",
-                    )
-                )
+            # User gave custom answer, use that
+            if answer_text:
+                boundaries["proactivity"] = answer_text
+            else:
+                chosen = answer.get("chosen_option", "proactive")
+                if chosen == "reactive":
+                    boundaries["proactivity"] = "Only answer what's asked, no unsolicited suggestions"
+
+    # Error handling boundary
+    if "error_handling_approach" in session.targets:
+        target = session.targets["error_handling_approach"]
+        if target.evidence:
+            answer = target.evidence[-1]["data"]
+            answer_text = answer.get("answer", "")
+            if answer_text:
+                boundaries["error_handling"] = answer_text
 
     return boundaries
+
+
+def _extract_projects(session: OnboardingSession) -> list[str]:
+    """Extract current projects from current_focus target."""
+    projects = []
+
+    if "current_focus" in session.targets:
+        target = session.targets["current_focus"]
+        if target.evidence:
+            answer = target.evidence[-1]["data"]
+            focus_text = answer.get("answer", "")
+            if focus_text:
+                # Simple extraction: split on common delimiters
+                # User wrote: "Working on 2 projects: (1) X, (2) Y"
+                projects.append(focus_text)
+
+    return projects
+
+
+def _extract_recent_context(session: OnboardingSession) -> str:
+    """Extract recent context from role and ai_usage."""
+    parts = []
+
+    if session.role:
+        parts.append(f"Role: {session.role}")
+
+    if session.ai_usage:
+        parts.append(f"AI Usage: {session.ai_usage}")
+
+    return " | ".join(parts)
 
 
 def get_profile_context_from_session(session: OnboardingSession) -> Dict[str, str]:

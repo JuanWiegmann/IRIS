@@ -19,9 +19,9 @@ class DatabaseConfig(BaseModel):
 
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
-    database: str = Field(default="kim")
-    username: str = Field(default="kim")
-    password: str = Field(default="kim_dev_password")
+    database: str = Field(default="iris")
+    username: str = Field(default="iris")
+    password: str = Field(default="iris_dev_password")
 
     # Connection pool settings
     pool_size: int = Field(default=5)

@@ -2,34 +2,34 @@
 
 ## The Core Understanding (between-the-lines knowledge)
 
-### What KIM Actually IS (the mental model)
+### What IRIS Actually IS (the mental model)
 
-KIM is like a "personality card" that follows you across all LLMs. Imagine switching between Claude, Copilot, and ChatGPT — normally each starts blank. KIM means they all know you.
+IRIS is like a "personality card" that follows you across all LLMs. Imagine switching between Claude, Copilot, and ChatGPT — normally each starts blank. IRIS means they all know you.
 
 It's NOT an assistant. It's NOT a chatbot. It's the KNOWLEDGE about the user that makes any chatbot better.
 
-Think of it like: a new colleague reads your "user manual" before talking to you. KIM IS that user manual — dynamically built, research-backed, always available via MCP.
+Think of it like: a new colleague reads your "user manual" before talking to you. IRIS IS that user manual — dynamically built, research-backed, always available via MCP.
 
 ### The Philosophical Design (how onboarding works)
 
 Traditional approach: "What's your communication style?" → User gives vague answer → useless.
 
-KIM's approach (GATE research):
+IRIS's approach (GATE research):
 - Define TARGETS: "I need to know if this user prefers concise or detailed answers"
 - Each target has a BARRIER: "User must have explicitly chosen between two examples OR shown preference in 2+ interactions"
 - The LLM sees the targets and FREELY decides how to reach them
-- KIM never dictates questions — it only says "I still don't know X about this user"
+- IRIS never dictates questions — it only says "I still don't know X about this user"
 - The LLM might ask an edge-case ("Version A or B?"), might ask directly, might observe behavior — it's free to choose strategy
 
-This is key: KIM is a HARNESS with GOALS, not a script with fixed questions.
+This is key: IRIS is a HARNESS with GOALS, not a script with fixed questions.
 
 ### The Self-Check Trick (why it's clever)
 
 When the LLM writes an email draft and calls `check_draft`:
 - The LLM thinks it's asking an external expert "is this good?"
-- Actually, KIM just compares the draft against stored profile rules
+- Actually, IRIS just compares the draft against stored profile rules
 - The LLM gets INDEPENDENT feedback it couldn't give itself (because you can't objectively judge your own work in the same context)
-- This is deterministic — no LLM needed inside KIM for this
+- This is deterministic — no LLM needed inside IRIS for this
 
 The LLM doesn't know it's checking itself. That's the whole trick.
 
@@ -43,7 +43,7 @@ What matters: "What did the user WRITE/CHOOSE/APPROVE?"
 - The correction they made ("nee, kürzer")
 - The format they approved
 
-KIM should store outputs and serve them ranked by relevance to the current query. Most relevant first (position in context matters — Wu et al. proved this).
+IRIS should store outputs and serve them ranked by relevance to the current query. Most relevant first (position in context matters — Wu et al. proved this).
 
 ### The Two Layers (practical difference)
 
@@ -54,9 +54,9 @@ KIM should store outputs and serve them ranked by relevance to the current query
 - The Anleitung IS the orchestration — no framework needed
 
 **Layer 2 (Claude with sampling support):**
-- KIM can REQUEST the LLM to do work (not just respond to tool calls)
+- IRIS can REQUEST the LLM to do work (not just respond to tool calls)
 - Each request gets a FRESH context (no bleed between steps)
-- KIM controls the loop: "Now classify this. Now generate. Now validate."
+- IRIS controls the loop: "Now classify this. Now generate. Now validate."
 - Same user LLM — but with context isolation between steps
 - This is better because step 3 (validate) doesn't see step 2's reasoning
 
@@ -89,7 +89,7 @@ We DON'T design all tools upfront. We build broad, then split when we see how th
 ### Files That Exist
 
 ```
-KIM/
+IRIS/
 ├── .claude/
 │   ├── settings.json              ← Hooks wired (3 hooks active)
 │   ├── hooks/
@@ -124,9 +124,9 @@ KIM/
 │   └── integration/__init__.py
 ├── docs/
 │   ├── diagrams/
-│   │   ├── kim_system_logic.tex   ← Full LaTeX diagram (compiled)
-│   │   ├── kim_logic_v5.pdf       ← Old version (still open, locked)
-│   │   └── kim_logic_v6.pdf       ← Current version
+│   │   ├── iris_system_logic.tex   ← Full LaTeX diagram (compiled)
+│   │   ├── iris_logic_v5.pdf       ← Old version (still open, locked)
+│   │   └── iris_logic_v6.pdf       ← Current version
 │   └── onboarding_targets_checklist.md
 ├── config/
 │   └── settings.yaml              ← Needs update for MCP-only architecture

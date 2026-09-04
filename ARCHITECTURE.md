@@ -1,4 +1,4 @@
-# KIM — Architecture
+# IRIS — Architecture
 
 ## System Architecture (with Build Status)
 
@@ -13,8 +13,8 @@ graph TB
     %% ═══ MCP CONNECTION ═══
     LLM <-->|MCP protocol| MCP
 
-    %% ═══ KIM MCP SERVER ═══
-    subgraph KIM["KIM — MCP Middleware (no LLM inside)"]
+    %% ═══ IRIS MCP SERVER ═══
+    subgraph IRIS["IRIS — MCP Middleware (no LLM inside)"]
 
         MCP[MCP Interface]
 
@@ -74,26 +74,26 @@ graph TB
     %% MCP Interface — Segment 1 (built)
     style MCP fill:#C8E6C9,stroke:#2E7D32
 
-    %% Tools — Segment 1 (get_context built, others planned)
+    %% Tools — ALL BUILT
     style T_ctx fill:#C8E6C9,stroke:#2E7D32
-    style T_chk fill:#f9f9f9,stroke:#ccc
-    style T_onb fill:#f9f9f9,stroke:#ccc
-    style T_log fill:#f9f9f9,stroke:#ccc
+    style T_chk fill:#C8E6C9,stroke:#2E7D32
+    style T_onb fill:#C8E6C9,stroke:#2E7D32
+    style T_log fill:#C8E6C9,stroke:#2E7D32
 
-    %% Logic — Segments 3-5 (planned)
-    style L_ret fill:#f9f9f9,stroke:#ccc
-    style L_chk fill:#f9f9f9,stroke:#ccc
-    style L_gate fill:#f9f9f9,stroke:#ccc
-    style L_log fill:#f9f9f9,stroke:#ccc
+    %% Logic — ALL BUILT
+    style L_ret fill:#C8E6C9,stroke:#2E7D32
+    style L_chk fill:#C8E6C9,stroke:#2E7D32
+    style L_gate fill:#C8E6C9,stroke:#2E7D32
+    style L_log fill:#C8E6C9,stroke:#2E7D32
 
-    %% Data — Segment 2 (profile built, outputs/memory/vectors planned)
+    %% Data — ALL BUILT
     style D_prof fill:#C8E6C9,stroke:#2E7D32
-    style D_out fill:#f9f9f9,stroke:#ccc
+    style D_out fill:#C8E6C9,stroke:#2E7D32
     style D_mem fill:#f9f9f9,stroke:#ccc
-    style D_vec fill:#f9f9f9,stroke:#ccc
+    style D_vec fill:#C8E6C9,stroke:#2E7D32
 
-    %% Anleitung — Segment 6 (planned)
-    style Anleitung fill:#f9f9f9,stroke:#ccc
+    %% Anleitung — BUILT
+    style Anleitung fill:#C8E6C9,stroke:#2E7D32
 ```
 
 ### Legend
@@ -113,26 +113,26 @@ graph TB
 sequenceDiagram
     participant U as User
     participant LLM as User's LLM
-    participant KIM as KIM (MCP)
+    participant IRIS as IRIS (MCP)
     participant Data as Data Store
 
     U->>LLM: Message (e.g. "Schreib eine Mail")
-    LLM->>KIM: get_context(query)
-    KIM->>Data: Retrieve profile + relevant outputs
-    Data-->>KIM: Profile + ranked examples (most relevant first)
-    KIM-->>LLM: Context + style rules + boundaries
+    LLM->>IRIS: get_context(query)
+    IRIS->>Data: Retrieve profile + relevant outputs
+    Data-->>IRIS: Profile + ranked examples (most relevant first)
+    IRIS-->>LLM: Context + style rules + boundaries
 
-    Note over LLM: Generates draft using KIM's context
+    Note over LLM: Generates draft using IRIS's context
 
-    LLM->>KIM: check_draft(draft)
-    Note over KIM: Deterministic validation<br>(tone, format, boundaries)
-    KIM-->>LLM: "zu förmlich" or "OK"
+    LLM->>IRIS: check_draft(draft)
+    Note over IRIS: Deterministic validation<br>(tone, format, boundaries)
+    IRIS-->>LLM: "zu förmlich" or "OK"
 
     Note over LLM: Revises if needed
 
     LLM->>U: Final personalized response
-    LLM->>KIM: log_output(final_text)
-    KIM->>Data: Store + embed for future retrieval
+    LLM->>IRIS: log_output(final_text)
+    IRIS->>Data: Store + embed for future retrieval
 ```
 
 ---
@@ -143,26 +143,26 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant LLM as User's LLM
-    participant KIM as KIM (MCP)
+    participant IRIS as IRIS (MCP)
 
     U->>LLM: "Lass uns an meinem Profil arbeiten"
-    LLM->>KIM: get_targets()
-    KIM-->>LLM: Open targets + research basis + barriers
+    LLM->>IRIS: get_targets()
+    IRIS-->>LLM: Open targets + research basis + barriers
 
     Note over LLM: Freely decides strategy<br>(edge-case / binary / open question)
 
     LLM->>U: Question based on chosen strategy
     U->>LLM: Answer
-    LLM->>KIM: store_insight(target, evidence)
-    KIM-->>LLM: Barrier met? (satisfied / needs more)
+    LLM->>IRIS: store_insight(target, evidence)
+    IRIS-->>LLM: Barrier met? (satisfied / needs more)
 
-    Note over LLM,KIM: Loop until minimum viable profile
+    Note over LLM,IRIS: Loop until minimum viable profile
 
-    LLM->>KIM: get_targets()
-    KIM-->>LLM: Fewer open targets remaining
+    LLM->>IRIS: get_targets()
+    IRIS-->>LLM: Fewer open targets remaining
 ```
 
-> KIM defines WHAT to learn (research-backed targets with barriers).
+> IRIS defines WHAT to learn (research-backed targets with barriers).
 > The LLM decides HOW to ask (strategy, order, phrasing).
 
 ---
@@ -172,14 +172,14 @@ sequenceDiagram
 ```mermaid
 graph LR
     A[LLM generates<br>draft] --> B[calls check_draft]
-    B --> C{KIM validates<br>against profile}
+    B --> C{IRIS validates<br>against profile}
     C -->|OK| D[Shows to user]
     C -->|Mismatch| E[Returns feedback:<br>specific issue]
     E --> F[LLM revises] --> B
 ```
 
 > **Why this works:** The LLM thinks `check_draft` is an external service.
-> KIM validates with fresh eyes — profile rules only, no generation context.
+> IRIS validates with fresh eyes — profile rules only, no generation context.
 > Result: unbiased feedback the LLM couldn't give itself.
 
 ---
@@ -188,9 +188,9 @@ graph LR
 
 ```mermaid
 graph LR
-    subgraph Layer2["KIM orchestrates via sampling"]
+    subgraph Layer2["IRIS orchestrates via sampling"]
         direction TB
-        K[KIM] -->|"sampling: classify"| S1[Fresh LLM context 1]
+        K[IRIS] -->|"sampling: classify"| S1[Fresh LLM context 1]
         S1 -->|result| K
         K -->|"sampling: generate"| S2[Fresh LLM context 2]
         S2 -->|result| K
@@ -200,7 +200,7 @@ graph LR
 ```
 
 > Each step = isolated context (no bleed between roles).
-> Same user LLM, but KIM controls the orchestration.
+> Same user LLM, but IRIS controls the orchestration.
 > Falls back to Layer 1 (tools + Anleitung) for basic clients.
 
 ---
@@ -286,7 +286,7 @@ graph LR
 
 | Decision | Why |
 |----------|-----|
-| KIM never generates, only validates | User's LLM generates; KIM provides context + validation |
+| IRIS never generates, only validates | User's LLM generates; IRIS provides context + validation |
 | Two-stage validation | Deterministic (free, fast) → MCP sampling (semantic, unbiased) |
 | MCP sampling for validation | Use user's LLM in fresh context (no generation bias) |
 | Adaptive validation strategy | Try MCP sampling → fallback deterministic only (no forced dependencies) |

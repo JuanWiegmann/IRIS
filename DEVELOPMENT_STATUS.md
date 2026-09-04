@@ -1,4 +1,4 @@
-# KIM Development Status
+# IRIS Development Status
 
 **Last Updated:** 2026-09-02  
 **Current State:** Segments 0-3, 5 Complete — Retrieval + Onboarding Working
@@ -53,9 +53,9 @@
   - pytest + asyncio working
 
 - ✅ **File-based storage** (`src/storage/`)
-  - ProfileStore: JSON files in `~/.kim/profiles/`
-  - OutputStore: JSON files in `~/.kim/outputs/{user_id}/`
-  - EmbeddingStore: NumPy arrays in `~/.kim/embeddings/`
+  - ProfileStore: JSON files in `~/.iris/profiles/`
+  - OutputStore: JSON files in `~/.iris/outputs/{user_id}/`
+  - EmbeddingStore: NumPy arrays in `~/.iris/embeddings/`
   - 100% transparent (human-readable)
   - No Docker required
 
@@ -77,7 +77,7 @@
 - ✅ **Storage inspector** (`src/inspect.py`)
   - CLI tool: `python -m src.inspect`
   - Shows profile, outputs, embeddings, sizes
-  - 100% transparency into what KIM knows
+  - 100% transparency into what IRIS knows
 
 ### **Segment 5: GATE Onboarding** (Complete)
 
@@ -97,7 +97,7 @@
   - Question templates with edge-case examples
   
 - ✅ **Session management** (`src/onboarding/store.py`)
-  - File-based storage: `~/.kim/onboarding/{user_id}/`
+  - File-based storage: `~/.iris/onboarding/{user_id}/`
   - Active session tracking + completed history
   - Progress tracking: questions asked/remaining, satisfaction rate
   
@@ -130,20 +130,20 @@
 
 ## 🎯 Core Function (Confirmed Design)
 
-KIM is an **agentic validation loop**:
+IRIS is an **agentic validation loop**:
 
 ```
 1. User → LLM: "Write email"
-2. LLM → KIM: get_context(query)
+2. LLM → IRIS: get_context(query)
    ↳ Returns: profile + ranked past outputs
 3. LLM generates draft
-4. LLM → KIM: check_draft(draft)
+4. LLM → IRIS: check_draft(draft)
    ├─ Stage 1: Deterministic checks (onboarding rules)
    └─ Stage 2: MCP sampling (ask AI in fresh context)
-5. KIM → LLM: validation feedback
+5. IRIS → LLM: validation feedback
 6. IF failed: LLM revises → back to step 4
 7. IF passed: Show to user
-8. LLM → KIM: log_output(final)
+8. LLM → IRIS: log_output(final)
    ↳ Store + embed for future retrieval
 ```
 
@@ -286,7 +286,7 @@ config/settings.yaml
 
 ---
 
-## 🎯 Minimum Viable KIM (MVP)
+## 🎯 Minimum Viable IRIS (MVP)
 
 **After Segments 3-4, you have:**
 
@@ -316,7 +316,7 @@ MISSING (for full system):
 ## 📊 Current Architecture State
 
 ```
-KIM MCP Server
+IRIS MCP Server
 ├── ✅ MCP Interface (stdio transport)
 ├── ✅ Profile Storage (file-based + PostgreSQL schemas)
 ├── ✅ Retrieval Engine (BM25 + vector hybrid)
@@ -378,7 +378,7 @@ NEXT PRIORITIES:
    - Fallback to deterministic only
 
 3. **Write The Anleitung** (Segment 6)
-   - Protocol for LLMs using KIM
+   - Protocol for LLMs using IRIS
    - When to call which tools
    - Best practices
 

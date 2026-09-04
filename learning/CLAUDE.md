@@ -24,4 +24,4 @@ Relevant Exam Areas: Tool schemas, function calling, loop termination
 
 ## Language
 
-Write in English. Code examples use the actual KIM codebase (not synthetic examples).
+Write in English. Code examples use the actual IRIS codebase (not synthetic examples).

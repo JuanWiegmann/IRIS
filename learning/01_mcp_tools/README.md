@@ -17,12 +17,12 @@ This means:
 - No learning between sessions or across different LLMs
 
 ### The MCP Solution
-**Model Context Protocol (MCP)** is a standard way for LLMs to call external tools. Instead of the LLM guessing your preferences, it can **ask KIM** via MCP.
+**Model Context Protocol (MCP)** is a standard way for LLMs to call external tools. Instead of the LLM guessing your preferences, it can **ask IRIS** via MCP.
 
-KIM is like a "personality card" that follows you across ALL LLMs:
-- Claude asks KIM: "How should I write for this user?"
-- Copilot asks KIM: "What's this user's tone preference?"
-- ChatGPT asks KIM: "What are relevant past outputs?"
+IRIS is like a "personality card" that follows you across ALL LLMs:
+- Claude asks IRIS: "How should I write for this user?"
+- Copilot asks IRIS: "What's this user's tone preference?"
+- ChatGPT asks IRIS: "What are relevant past outputs?"
 
 **One profile. All LLMs.**
 
@@ -43,7 +43,7 @@ User's LLM (Claude, Copilot, ChatGPT)
     │ MCP Protocol (JSON-RPC 2.0)
     │ via stdio or HTTP
     ▼
-KIM MCP Server (src/server.py)
+IRIS MCP Server (src/server.py)
     │
     ├─ list_tools() → Tool[]
     │   Returns available tools with schemas
@@ -59,10 +59,10 @@ KIM MCP Server (src/server.py)
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
-app = Server("kim-server")
+app = Server("iris-server")
 ```
 - Creates an MCP server instance
-- Name: "kim-server" (identifies this server to clients)
+- Name: "iris-server" (identifies this server to clients)
 
 **2. Tool Registration**
 ```python
@@ -134,12 +134,12 @@ async with stdio_server() as (read_stream, write_stream):
 - Uses JSON-RPC 2.0 (same as LSP, if you know that)
 - Waits for LLM to send requests
 
-**2. Tool Discovery (LLM → KIM)**
+**2. Tool Discovery (LLM → IRIS)**
 ```json
 // LLM sends:
 {"jsonrpc": "2.0", "method": "tools/list", "id": 1}
 
-// KIM responds:
+// IRIS responds:
 {
   "jsonrpc": "2.0",
   "id": 1,
@@ -155,7 +155,7 @@ async with stdio_server() as (read_stream, write_stream):
 }
 ```
 
-**3. Tool Execution (LLM → KIM)**
+**3. Tool Execution (LLM → IRIS)**
 ```json
 // LLM sends:
 {
@@ -168,7 +168,7 @@ async with stdio_server() as (read_stream, write_stream):
   "id": 2
 }
 
-// KIM responds:
+// IRIS responds:
 {
   "jsonrpc": "2.0",
   "id": 2,

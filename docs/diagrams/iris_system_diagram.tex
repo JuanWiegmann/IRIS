@@ -1,6 +1,5 @@
 \documentclass[border=10pt]{standalone}
 \usepackage{tikz}
-\usepackage{fontawesome5}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, shadows, decorations.pathreplacing}
 
 \begin{document}
@@ -74,8 +73,8 @@
     };
 
     % ========== LAYER 1: ACTORS ==========
-    \node[user] (user) at (-6, 6) {\faUser\ User};
-    \node[llm] (llm) at (0, 6) {\faBrain\ LLM\\(Claude/GPT/etc)};
+    \node[user] (user) at (-6, 6) {User};
+    \node[llm] (llm) at (0, 6) {LLM\\(Claude/GPT/etc)};
 
     % ========== LAYER 2: IRIS MCP SERVER ==========
     \node[iris, minimum width=10cm, minimum height=3cm] (iris_server) at (0, 2.5) {};

@@ -2,7 +2,7 @@
 Database Models
 ===============
 
-SQLAlchemy ORM models for KIM's 3NF schema.
+SQLAlchemy ORM models for IRIS's 3NF schema.
 
 Maps to tables created in scripts/init_db.sql.
 """

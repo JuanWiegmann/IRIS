@@ -2,7 +2,7 @@
 Database Package
 ================
 
-PostgreSQL + pgvector database layer for KIM.
+PostgreSQL + pgvector database layer for IRIS.
 
 Main exports:
 - DatabaseConfig: Connection configuration

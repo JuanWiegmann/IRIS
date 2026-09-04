@@ -74,7 +74,7 @@ def test_format_profile_for_llm():
         tone=[Tone.PROFESSIONAL, Tone.FRIENDLY],
         format_preference=FormatPreference.EXAMPLES_HEAVY,
         boundaries={"formality": "Avoid overly formal"},
-        current_projects=["KIM", "Certification"],
+        current_projects=["IRIS", "Certification"],
         recent_context="Working on profiles"
     )
 
@@ -88,7 +88,7 @@ def test_format_profile_for_llm():
     assert "### Boundaries" in formatted
     assert "Avoid overly formal" in formatted
     assert "### Current Projects" in formatted
-    assert "KIM" in formatted
+    assert "IRIS" in formatted
 
 
 # ═══════════════════════════════════════════════════════════

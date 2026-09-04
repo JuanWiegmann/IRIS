@@ -1,0 +1,16 @@
+{
+  "$schema": "https://github.com/modelcontextprotocol/servers/raw/main/schemas/mcp.schema.json",
+  "mcpServers": {
+    "iris": {
+      "command": "C:\\Users\\AV013EV\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "args": [
+        "-m",
+        "src.server"
+      ],
+      "cwd": "C:\\Users\\AV013EV\\KIM_dev\\IRIS",
+      "env": {
+        "IRIS_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-# KIM System Architecture — Professional Documentation
+# IRIS System Architecture — Professional Documentation
 
 **Document Version:** 1.0  
 **Last Updated:** 2026-07-24  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-**KIM (Knowledge & Identity Middleware)** is an MCP-compliant middleware server that provides personalization capabilities to any LLM-based system. KIM acts as a context provider and validator, enabling consistent user experience across multiple LLM providers (Claude, GitHub Copilot, ChatGPT) without requiring model-specific integrations.
+**IRIS (Knowledge & Identity Middleware)** is an MCP-compliant middleware server that provides personalization capabilities to any LLM-based system. IRIS acts as a context provider and validator, enabling consistent user experience across multiple LLM providers (Claude, GitHub Copilot, ChatGPT) without requiring model-specific integrations.
 
 **Core Value Proposition:**
 - Single user profile works across all LLMs
@@ -42,7 +42,7 @@
                                  │ (stdio / HTTP)
                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                          KIM SERVER                              │
+│                          IRIS SERVER                              │
 │                   (MCP Middleware Server)                        │
 │                                                                  │
 │  Responsibilities:                                               │
@@ -87,7 +87,7 @@
                          │
                          ▼
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                        KIM MCP SERVER                            ┃
+┃                        IRIS MCP SERVER                            ┃
 ┃                                                                  ┃
 ┃  ┌─────────────────────────────────────────────────────────┐   ┃
 ┃  │              MCP INTERFACE LAYER                        │   ┃
@@ -134,7 +134,7 @@
                          ▼
 ┌───────────────────────────────────────────────────────────────────┐
 │                     PERSISTENT STORAGE                             │
-│  ~/kim_data/profiles/, ~/kim_data/outputs/, ~/kim_data/vectors/   │
+│  ~/iris_data/profiles/, ~/iris_data/outputs/, ~/iris_data/vectors/   │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -353,9 +353,9 @@
 | **ID** | UC-01 |
 | **Name** | Get Personalized Context |
 | **Actor** | LLM Client Application |
-| **Precondition** | User profile exists in KIM |
+| **Precondition** | User profile exists in IRIS |
 | **Trigger** | LLM needs context for user query |
-| **Main Flow** | 1. LLM calls `get_context(query)`<br>2. KIM retrieves user profile<br>3. KIM searches for relevant past outputs (BM25 + vector)<br>4. KIM ranks results (most-relevant-first)<br>5. KIM returns {profile, outputs, memory} |
+| **Main Flow** | 1. LLM calls `get_context(query)`<br>2. IRIS retrieves user profile<br>3. IRIS searches for relevant past outputs (BM25 + vector)<br>4. IRIS ranks results (most-relevant-first)<br>5. IRIS returns {profile, outputs, memory} |
 | **Postcondition** | LLM receives personalized context |
 | **Alternative Flow** | If no profile exists → return default/empty profile |
 | **Performance Req** | < 500ms for typical queries |
@@ -369,7 +369,7 @@
 | **Actor** | LLM Client Application |
 | **Precondition** | User profile exists, draft text provided |
 | **Trigger** | LLM generates draft and calls `check_draft(text)` |
-| **Main Flow** | 1. LLM calls `check_draft(draft)`<br>2. KIM retrieves user profile rules<br>3. KIM checks tone, format, boundaries<br>4. KIM identifies issues (if any)<br>5. KIM returns {is_valid, issues[], suggestions[]} |
+| **Main Flow** | 1. LLM calls `check_draft(draft)`<br>2. IRIS retrieves user profile rules<br>3. IRIS checks tone, format, boundaries<br>4. IRIS identifies issues (if any)<br>5. IRIS returns {is_valid, issues[], suggestions[]} |
 | **Postcondition** | LLM receives validation feedback |
 | **Alternative Flow** | If no issues → return {is_valid: true} |
 | **Performance Req** | < 200ms (deterministic, no LLM call) |
@@ -381,9 +381,9 @@
 | **ID** | UC-03 |
 | **Name** | Complete User Onboarding |
 | **Actor** | End User (via LLM Client) |
-| **Precondition** | KIM initialized, targets defined |
+| **Precondition** | IRIS initialized, targets defined |
 | **Trigger** | User starts onboarding ("let's work on my profile") |
-| **Main Flow** | 1. LLM calls `get_targets()`<br>2. KIM returns open targets + barriers<br>3. LLM decides question strategy (edge-case/binary/open)<br>4. LLM asks user question<br>5. User responds<br>6. LLM calls `store_insight(target, evidence)`<br>7. KIM checks if barrier satisfied<br>8. Repeat until minimum viable profile complete |
+| **Main Flow** | 1. LLM calls `get_targets()`<br>2. IRIS returns open targets + barriers<br>3. LLM decides question strategy (edge-case/binary/open)<br>4. LLM asks user question<br>5. User responds<br>6. LLM calls `store_insight(target, evidence)`<br>7. IRIS checks if barrier satisfied<br>8. Repeat until minimum viable profile complete |
 | **Postcondition** | User profile meets all target barriers |
 | **Alternative Flow** | User can pause/resume onboarding |
 | **Performance Req** | Full onboarding: 5-10 minutes (GATE research) |
@@ -397,7 +397,7 @@
 | **Actor** | LLM Client Application |
 | **Precondition** | Final output approved by user |
 | **Trigger** | LLM calls `log_output(text, context)` |
-| **Main Flow** | 1. LLM calls `log_output(final_text, context)`<br>2. KIM stores text + metadata<br>3. KIM generates embedding (async)<br>4. KIM updates vector index<br>5. KIM updates STM/LTM memory<br>6. KIM returns success |
+| **Main Flow** | 1. LLM calls `log_output(final_text, context)`<br>2. IRIS stores text + metadata<br>3. IRIS generates embedding (async)<br>4. IRIS updates vector index<br>5. IRIS updates STM/LTM memory<br>6. IRIS returns success |
 | **Postcondition** | Output indexed and retrievable |
 | **Alternative Flow** | Embedding generation can happen asynchronously |
 | **Performance Req** | Synchronous: < 100ms; Async embedding: < 2s |
@@ -482,7 +482,7 @@
 ### 6.1 Standard Interaction Flow
 
 ```
-User          LLM Client        KIM Server       Data Store
+User          LLM Client        IRIS Server       Data Store
  │                │                 │                │
  │  "Write email" │                 │                │
  ├───────────────>│                 │                │
@@ -541,7 +541,7 @@ User          LLM Client        KIM Server       Data Store
 ### 6.2 Onboarding Flow (GATE)
 
 ```
-User          LLM Client        KIM Server       GATE State
+User          LLM Client        IRIS Server       GATE State
  │                │                 │                │
  │ "Let's set up  │                 │                │
  │  my profile"   │                 │                │
@@ -624,12 +624,12 @@ User          LLM Client        KIM Server       GATE State
 │                        │ stdio / HTTP localhost                │
 │                        │                                       │
 │  ┌─────────────────────┴────────────────────────────────────┐ │
-│  │  KIM Server Process                                      │ │
+│  │  IRIS Server Process                                      │ │
 │  │  ───────────────────                                     │ │
 │  │  Runtime: Python 3.11+                                   │ │
 │  │  Process: Single process, multi-threaded                 │ │
 │  │  Port: stdio (default) or HTTP :8080                     │ │
-│  │  Config: ~/.kim/config.yaml                              │ │
+│  │  Config: ~/.iris/config.yaml                              │ │
 │  └─────────────────────┬────────────────────────────────────┘ │
 │                        │                                       │
 │                        │ File I/O                              │
@@ -637,7 +637,7 @@ User          LLM Client        KIM Server       GATE State
 │  ┌─────────────────────┴────────────────────────────────────┐ │
 │  │  File System Storage                                     │ │
 │  │  ────────────────────                                    │ │
-│  │  ~/.kim/data/                                            │ │
+│  │  ~/.iris/data/                                            │ │
 │  │    ├── profiles/    (JSON files)                        │ │
 │  │    ├── outputs/     (text + metadata)                   │ │
 │  │    ├── memory/      (STM/LTM)                           │ │
@@ -741,10 +741,10 @@ Optional External Service:
 - 5-10 minute window optimal (18-30 questions across 6 sections)
 - Works with open-source models (Mixtral matched GPT-4)
 
-**Application in KIM:**
+**Application in IRIS:**
 - `get_targets()` exposes research-backed dimensions
 - Barriers define minimum evidence thresholds
-- LLM freely chooses question strategy (KIM doesn't prescribe)
+- LLM freely chooses question strategy (IRIS doesn't prescribe)
 
 ### 10.2 User Profile Roles (Wu et al., 2024)
 
@@ -754,7 +754,7 @@ Optional External Service:
 - Most-relevant-first ordering significantly improves quality
 - Semantic similarity from NON-user sources hurts performance
 
-**Application in KIM:**
+**Application in IRIS:**
 - `log_output()` stores final user-approved outputs
 - Retrieval engine ranks by relevance (BM25 + vector)
 - Most relevant examples returned first
@@ -768,7 +768,7 @@ Optional External Service:
 - Dynamic user profile built implicitly from interactions
 - 96% retrieval accuracy vs 87% RAG baseline
 
-**Application in KIM:**
+**Application in IRIS:**
 - Memory tiers (STM expires after 24h, LTM permanent)
 - Profile confidence evolves over time
 - Validation patterns (separate validator role)
@@ -779,7 +779,7 @@ Optional External Service:
 
 | ID | Decision | Rationale | Date |
 |----|----------|-----------|------|
-| ARCH-001 | No internal LLM | User's LLM is powerful enough; KIM = pure logic + data | 2026-07-22 |
+| ARCH-001 | No internal LLM | User's LLM is powerful enough; IRIS = pure logic + data | 2026-07-22 |
 | ARCH-002 | MCP protocol | Standard, LLM-agnostic, supported by major providers | 2026-07-22 |
 | ARCH-003 | File-based storage (PoC) | Simple, portable, version-controllable | 2026-07-22 |
 | ARCH-004 | Research-backed targets | Every onboarding dimension must cite evidence | 2026-07-22 |
@@ -845,7 +845,7 @@ Optional External Service:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-07-24 | KIM Team | Initial professional architecture documentation |
+| 1.0 | 2026-07-24 | IRIS Team | Initial professional architecture documentation |
 
 **Review & Approval:**
 

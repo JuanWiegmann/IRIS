@@ -1,8 +1,8 @@
 """
-KIM Log Viewer
+IRIS Log Viewer
 ==============
 
-Interactive log viewer for analyzing KIM operations.
+Interactive log viewer for analyzing IRIS operations.
 
 Usage:
     python -m src.log_viewer                    # View recent logs
@@ -24,9 +24,9 @@ import os
 # ═══════════════════════════════════════════════════════════
 
 def get_log_file() -> Path:
-    """Get KIM log file path."""
-    kim_root = Path(os.getenv("KIM_DATA_DIR", Path.home() / ".kim"))
-    return kim_root / "logs" / "kim_server.log"
+    """Get IRIS log file path."""
+    iris_root = Path(os.getenv("IRIS_DATA_DIR", Path.home() / ".iris"))
+    return iris_root / "logs" / "iris_server.log"
 
 
 def parse_log_line(line: str) -> dict:
@@ -157,11 +157,11 @@ def view_recent(log_file: Path, lines: int, detailed: bool, filters: dict):
     """View recent log lines."""
     if not log_file.exists():
         print(f"❌ Log file not found: {log_file}")
-        print("Run KIM server first to generate logs.")
+        print("Run IRIS server first to generate logs.")
         return
 
     print(colorize("=" * 80, "blue"))
-    print(colorize(f"KIM Server Logs (last {lines} lines)", "blue"))
+    print(colorize(f"IRIS Server Logs (last {lines} lines)", "blue"))
     print(colorize("=" * 80, "blue"))
     print()
 
@@ -190,7 +190,7 @@ def follow_logs(log_file: Path, detailed: bool, filters: dict):
             time.sleep(1)
 
     print(colorize("=" * 80, "blue"))
-    print(colorize("Following KIM Server Logs (Ctrl+C to stop)", "blue"))
+    print(colorize("Following IRIS Server Logs (Ctrl+C to stop)", "blue"))
     print(colorize("=" * 80, "blue"))
     print()
 
@@ -219,7 +219,7 @@ def follow_logs(log_file: Path, detailed: bool, filters: dict):
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="View and analyze KIM server logs",
+        description="View and analyze IRIS server logs",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

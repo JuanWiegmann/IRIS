@@ -6,12 +6,12 @@ MCP tool for storing user outputs (emails, documents, code, etc.).
 
 Flow:
 1. User's LLM calls log_output(content, context, output_type)
-2. KIM stores output as JSON file
-3. KIM generates embedding via OpenAI
-4. KIM saves embedding to vector store
+2. IRIS stores output as JSON file
+3. IRIS generates embedding via OpenAI
+4. IRIS saves embedding to vector store
 5. BM25 index is invalidated (rebuilt on next search)
 
-This is how KIM learns from user outputs (Wu et al. 2024).
+This is how IRIS learns from user outputs (Wu et al. 2024).
 """
 
 from uuid import UUID
@@ -21,6 +21,8 @@ from src.retrieval.embeddings import embed_text
 from src.storage.file_store import get_output_store
 from src.storage.embedding_store import get_embedding_store
 from src.retrieval.bm25_search import get_bm25_manager
+from src.profile import profile_exists
+from src.utils import iris_response
 
 
 # ═══════════════════════════════════════════════════════════
@@ -40,7 +42,7 @@ def get_log_output_tool() -> Tool:
             "Store user output for future retrieval and personalization. "
             "\n\n"
             "Call this after the user approves the final version of something you generated "
-            "(email, document, code, etc.). KIM stores it and learns from the user's "
+            "(email, document, code, etc.). IRIS stores it and learns from the user's "
             "preferred style and patterns."
             "\n\n"
             "Research basis: Wu et al. (2024) — user OUTPUTS (not inputs) are the primary "
@@ -84,6 +86,20 @@ async def handle_log_output(arguments: dict, user_id: UUID) -> list[TextContent]
     Returns:
         List with one TextContent confirming storage
     """
+    # ═══ GATE CHECK: Profile must exist ═══
+    # Learning: learning/07_user_profiles/README.md#onboarding-gates
+    if not profile_exists(user_id):
+        return [
+            TextContent(
+                type="text",
+                text=iris_response(
+                    "ONBOARDING_REQUIRED\n\n"
+                    "No profile found. You must complete onboarding before using log_output.\n\n"
+                    "Call start_onboarding() to begin."
+                )
+            )
+        ]
+
     content = arguments["content"]
     context = arguments["context"]
     output_type = arguments.get("output_type", "other")
@@ -93,7 +109,7 @@ async def handle_log_output(arguments: dict, user_id: UUID) -> list[TextContent]
         return [
             TextContent(
                 type="text",
-                text="❌ Error: content cannot be empty"
+                text=iris_response("❌ Error: content cannot be empty")
             )
         ]
 
@@ -101,7 +117,7 @@ async def handle_log_output(arguments: dict, user_id: UUID) -> list[TextContent]
         return [
             TextContent(
                 type="text",
-                text="❌ Error: context cannot be empty"
+                text=iris_response("❌ Error: context cannot be empty")
             )
         ]
 
@@ -161,7 +177,7 @@ This output will be used for future personalization and retrieval.
         return [
             TextContent(
                 type="text",
-                text=response
+                text=iris_response(response)
             )
         ]
 

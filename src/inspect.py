@@ -1,10 +1,10 @@
 """
-KIM Storage Inspector
+IRIS Storage Inspector
 =====================
 
-CLI tool for inspecting KIM's local storage.
+CLI tool for inspecting IRIS's local storage.
 
-Provides 100% transparency into what KIM knows about the user.
+Provides 100% transparency into what IRIS knows about the user.
 
 Usage:
     python -m src.inspect
@@ -17,7 +17,7 @@ import asyncio
 from pathlib import Path
 from uuid import UUID
 
-from src.storage.file_store import get_kim_root, get_profile_store, get_output_store
+from src.storage.file_store import get_iris_root, get_profile_store, get_output_store
 from src.storage.embedding_store import get_embedding_store
 
 
@@ -27,22 +27,22 @@ from src.storage.embedding_store import get_embedding_store
 
 async def inspect_storage(user_id: UUID, detailed: bool = False) -> None:
     """
-    Inspect KIM storage for a user.
+    Inspect IRIS storage for a user.
 
     Args:
         user_id: User UUID
         detailed: Show detailed output contents
     """
-    kim_root = get_kim_root()
+    iris_root = get_iris_root()
 
     print("═" * 60)
-    print("KIM Storage Report")
+    print("IRIS Storage Report")
     print("═" * 60)
     print()
 
     # ═══ USER INFO ═══
     print(f"User ID: {user_id}")
-    print(f"Storage Root: {kim_root}")
+    print(f"Storage Root: {iris_root}")
     print()
 
     # ═══ PROFILE ═══
@@ -50,7 +50,7 @@ async def inspect_storage(user_id: UUID, detailed: bool = False) -> None:
 
     if await profile_store.exists(user_id):
         profile = await profile_store.read(user_id)
-        profile_path = kim_root / "profiles" / f"{user_id}.json"
+        profile_path = iris_root / "profiles" / f"{user_id}.json"
         profile_size = profile_path.stat().st_size if profile_path.exists() else 0
 
         print("┌─ Profile")
@@ -81,7 +81,7 @@ async def inspect_storage(user_id: UUID, detailed: bool = False) -> None:
 
     if outputs:
         total_words = sum(o["metadata"].get("word_count", 0) for o in outputs)
-        outputs_dir = kim_root / "outputs" / str(user_id)
+        outputs_dir = iris_root / "outputs" / str(user_id)
 
         # Calculate total size
         total_size = sum(
@@ -126,7 +126,7 @@ async def inspect_storage(user_id: UUID, detailed: bool = False) -> None:
     embedding_store = get_embedding_store()
 
     if await embedding_store.exists(user_id):
-        embeddings_path = kim_root / "embeddings" / f"{user_id}.npy"
+        embeddings_path = iris_root / "embeddings" / f"{user_id}.npy"
         embeddings_size = embeddings_path.stat().st_size if embeddings_path.exists() else 0
 
         # Load to get count
@@ -163,7 +163,7 @@ async def inspect_storage(user_id: UUID, detailed: bool = False) -> None:
 
 
 async def list_all_users() -> None:
-    """List all users with KIM data."""
+    """List all users with IRIS data."""
     profile_store = get_profile_store()
     user_ids = await profile_store.list_all()
 
@@ -196,7 +196,7 @@ async def list_all_users() -> None:
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Inspect KIM's local storage",
+        description="Inspect IRIS's local storage",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -222,7 +222,7 @@ Examples:
     parser.add_argument(
         "--list-users",
         action="store_true",
-        help="List all users with KIM data"
+        help="List all users with IRIS data"
     )
 
     args = parser.parse_args()

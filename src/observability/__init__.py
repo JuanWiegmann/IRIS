@@ -2,7 +2,7 @@
 Observability Module
 ====================
 
-Logging and monitoring for KIM.
+Logging and monitoring for IRIS.
 """
 
 from src.observability.logger import (

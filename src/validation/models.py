@@ -96,8 +96,32 @@ class ValidationResult(BaseModel):
         Returns:
             Markdown-formatted validation feedback
         """
+        # Janus butler header (front view with tray)
+        janus_checking = """
+    ┌─────────────────────────────────┐
+    │      JANUS               │
+    │                                 │
+    │        ___                      │
+    │       /• •\\                     │
+    │      ( •_• )                    │
+    │       \\___/                     │
+    │        |▓|                      │
+    │    ╔══════════╗                 │
+    │    ║ VALIDATED║                 │
+    │    ╚══════════╝                 │
+    │       /═╬═\\                     │
+    │      ( ▓▓▓ )                    │
+    │       |║║|                     │
+    │       | | |                    │
+    │      /  |  \\                   │
+    │                                 │
+    └─────────────────────────────────┘
+        """
+
         if self.passed and not self.issues:
-            return f"""✅ **Validation Passed**
+            return f"""{janus_checking}
+
+✅ **Validation Passed**
 
 **Use Case:** {self.use_case.value}
 **Method:** {self.method.value}
@@ -108,7 +132,7 @@ No issues found. Draft is ready to show to user.
         # Has issues
         status = "✅ Passed (suggestions)" if self.passed else "❌ Failed (blocking issues)"
 
-        lines = [f"{status}\n"]
+        lines = [janus_checking, "", f"{status}\n"]
         lines.append(f"**Use Case:** {self.use_case.value}")
         lines.append(f"**Method:** {self.method.value}")
         lines.append("")

@@ -1,4 +1,4 @@
-# KIM Onboarding Implementation Guide
+# IRIS Onboarding Implementation Guide
 
 **Status:** ✅ Implemented (Segment 5)  
 **Research Basis:** GATE (Li et al. 2023), Wu et al. 2024, Westhaeusser et al. 2025
@@ -7,7 +7,7 @@
 
 ## Overview
 
-KIM uses **adaptive preference elicitation** to learn user preferences with minimal questions (8-10 instead of 25-30). The onboarding is conducted entirely by the user's LLM — KIM provides research-backed guidance and validates barriers.
+IRIS uses **adaptive preference elicitation** to learn user preferences with minimal questions (8-10 instead of 25-30). The onboarding is conducted entirely by the user's LLM — IRIS provides research-backed guidance and validates barriers.
 
 ### Key Research Findings
 
@@ -33,7 +33,7 @@ KIM uses **adaptive preference elicitation** to learn user preferences with mini
 
 ### Phase 2: Profile Detection
 
-Based on Q1 + Q2 answers, KIM detects one of four profile types:
+Based on Q1 + Q2 answers, IRIS detects one of four profile types:
 
 | Profile Type | Triggers When | Question Path |
 |--------------|--------------|---------------|
@@ -282,7 +282,7 @@ Completes onboarding and generates profile.
 3. **Store Q1:** Call `store_answer(user_id, "role", {answer: "..."})`
 4. **Q2 (ai_usage):** Present returned question, get answer
 5. **Store Q2:** Call `store_answer(user_id, "ai_usage", {answer: "..."})`
-   - KIM detects profile type and selects questions
+   - IRIS detects profile type and selects questions
 6. **Loop for remaining questions:**
    - Present `next_question` from response
    - Get user's answer
@@ -305,7 +305,7 @@ LLM: Great! And what do you use AI for?
 User: Mainly for writing code and debugging issues.
 
 [LLM calls store_answer("user123", "ai_usage", {answer: "Writing code and debugging"})]
-[KIM detects: CODE_HEAVY profile, selects technical questions]
+[IRIS detects: CODE_HEAVY profile, selects technical questions]
 
 LLM: Perfect! I've selected 8 questions relevant to developers. Here's the first:
      
@@ -329,7 +329,7 @@ LLM: All done! I've learned your preferences. From now on, I'll provide detailed
 
 ## Information Pool Structure
 
-KIM provides rich context to guide the LLM:
+IRIS provides rich context to guide the LLM:
 
 ### Before Each Question
 
@@ -392,7 +392,7 @@ Each target has a **barrier** that defines when it's "satisfied":
 
 ## Storage
 
-Sessions stored in: `~/.kim/onboarding/{user_id}/`
+Sessions stored in: `~/.iris/onboarding/{user_id}/`
 
 - **`active_session.json`** — Current in-progress session
 - **`{session_id}.json`** — Completed sessions (history)
@@ -424,7 +424,7 @@ Structure:
 
 ## Profile Generation
 
-After `complete_onboarding()`, KIM generates a `UserProfile`:
+After `complete_onboarding()`, IRIS generates a `UserProfile`:
 
 ```json
 {
@@ -490,7 +490,7 @@ complete_onboarding({user_id: "test_user"})
 ### Inspect Session State
 
 ```bash
-cat ~/.kim/onboarding/test_user/active_session.json | jq
+cat ~/.iris/onboarding/test_user/active_session.json | jq
 ```
 
 ---

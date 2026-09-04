@@ -21,6 +21,8 @@ from mcp.types import Tool, TextContent
 
 from src.validation import detect_use_case, UseCase
 from src.tools.check_draft_impl import validate_messaging, validate_coding, validate_mendix
+from src.profile import profile_exists
+from src.utils import iris_response
 
 
 # ═══════════════════════════════════════════════════════════
@@ -82,6 +84,20 @@ async def handle_check_draft(arguments: dict, user_id: UUID) -> list[TextContent
     Returns:
         List with one TextContent containing validation results
     """
+    # ═══ GATE CHECK: Profile must exist ═══
+    # Learning: learning/07_user_profiles/README.md#onboarding-gates
+    if not profile_exists(user_id):
+        return [
+            TextContent(
+                type="text",
+                text=iris_response(
+                    "ONBOARDING_REQUIRED\n\n"
+                    "No profile found. You must complete onboarding before using check_draft.\n\n"
+                    "Call start_onboarding() to begin."
+                )
+            )
+        ]
+
     draft = arguments["draft"]
     context = arguments.get("context", "")
 
@@ -89,7 +105,7 @@ async def handle_check_draft(arguments: dict, user_id: UUID) -> list[TextContent
         return [
             TextContent(
                 type="text",
-                text="❌ Error: draft cannot be empty"
+                text=iris_response("❌ Error: draft cannot be empty")
             )
         ]
 
@@ -110,6 +126,6 @@ async def handle_check_draft(arguments: dict, user_id: UUID) -> list[TextContent
     return [
         TextContent(
             type="text",
-            text=result.format_for_llm()
+            text=iris_response(result.format_for_llm())
         )
     ]

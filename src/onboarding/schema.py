@@ -173,6 +173,12 @@ class OnboardingSession(BaseModel):
 
         self.questions_asked += 1
 
+        # Populate role/ai_usage fields for anchor questions
+        if target_id == "role":
+            self.role = evidence.get("answer") or evidence.get("chosen_option")
+        elif target_id == "ai_usage":
+            self.ai_usage = evidence.get("answer") or evidence.get("chosen_option")
+
         # Remove from remaining if satisfied
         if target.satisfied and target_id in self.questions_remaining:
             self.questions_remaining.remove(target_id)
@@ -221,7 +227,7 @@ class OnboardingSession(BaseModel):
 
 class InformationPool(BaseModel):
     """
-    Information KIM provides to LLM before/after each question.
+    Information IRIS provides to LLM before/after each question.
 
     Design: Transparent progress + research-backed guidance.
     """

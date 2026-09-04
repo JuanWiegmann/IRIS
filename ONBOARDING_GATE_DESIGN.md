@@ -1,4 +1,4 @@
-# KIM Onboarding Design — GATE Methodology Integration
+# IRIS Onboarding Design — GATE Methodology Integration
 
 **Based on:** Li, Tamkin, Goodman, Andreas (2023), *"Eliciting Human Preferences with Language Models"* (arXiv:2310.11589)
 
@@ -184,7 +184,7 @@ def select_question_type(section, previous_answers, remaining_goals):
 
 Research shows 5-minute interaction windows are optimal.
 
-**KIM Target:**
+**IRIS Target:**
 - 6 sections × 3-5 questions = 18-30 questions total
 - Adaptive: Detailed answers → fewer questions
 - Average 15-20 seconds per question
@@ -332,7 +332,7 @@ Measure via held-out scenarios:
 
 ---
 
-## Key Takeaways for KIM Implementation
+## Key Takeaways for IRIS Implementation
 
 1. **Communication section is critical** — Use edge cases heavily here
 2. **Show complete examples** — Two full email versions, not abstractions

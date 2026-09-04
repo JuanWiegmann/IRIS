@@ -9,13 +9,13 @@ When the user invokes this skill, try to get back to full working context as fas
 
 ## Step 1: Check if this IS a continued session
 
-If the conversation already has prior messages about KIM (i.e., this is `claude --continue`), just say:
+If the conversation already has prior messages about IRIS (i.e., this is `claude --continue`), just say:
 "Session continued. We're at [current segment/step]. Ready to proceed?"
 And skip everything else.
 
 ## Step 1b: If fresh session — suggest resume first
 
-If this appears to be a FRESH session (no prior KIM conversation context), immediately:
+If this appears to be a FRESH session (no prior IRIS conversation context), immediately:
 
 1. Read `.claude/last_session.json`
 2. Tell the user:
@@ -56,7 +56,7 @@ If `.claude/last_session.json` does NOT exist, fall back to:
 After reading, present a brief status:
 
 ```
-═══ KIM Session Recovered ═══════════════════════════
+═══ IRIS Session Recovered ═══════════════════════════
 
 Last session: <date from dump file>
 Segment:      <current segment and step>
