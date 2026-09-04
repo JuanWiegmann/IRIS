@@ -132,16 +132,50 @@ def print_progress(message: str, end: str = ''):
     print(f"\r{face} {message}...", end=end, flush=True)
 
 
+def print_progress_bar(message: str, percent: int):
+    """
+    Print animated progress bar (winget-style).
+
+    Args:
+        message: Status message
+        percent: Progress 0-100
+    """
+    bar_width = 30
+    filled = int(bar_width * percent / 100)
+    bar = '█' * filled + '░' * (bar_width - filled)
+    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+    percent_text = colorize(f"{percent}%", Colors.BRIGHT_WHITE, bold=True)
+    print(f"\r{face} {message} [{bar}] {percent_text}", end='', flush=True)
+
+
+def animate_loading(message: str, duration: float = 2.0):
+    """
+    Animate loading text with dots (prevents freeze perception).
+
+    Args:
+        message: Base message
+        duration: How long to animate (seconds)
+    """
+    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+    frames = ['   ', '.  ', '.. ', '...']
+    steps = int(duration / 0.2)
+
+    for i in range(steps):
+        frame = frames[i % len(frames)]
+        print(f"\r{face} {message}{frame}", end='', flush=True)
+        time.sleep(0.2)
+
+
 def print_done(message: str):
     """Complete a progress line with happy IRIS face."""
     face = colorize("( •‿• )", Colors.BRIGHT_GREEN, bold=True)
-    print(f"\r{face} {message}                    ")  # Extra spaces to clear
+    print(f"\r{face} {message}                              ")  # Extra spaces to clear
 
 
 def print_skip(message: str):
     """Complete a progress line with neutral IRIS face."""
     face = colorize("( •_• )", Colors.DIM + Colors.YELLOW)
-    print(f"\r{face} {message}                    ")
+    print(f"\r{face} {message}                              ")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -280,11 +314,26 @@ def launch_claude_code() -> bool:
 
 def install_dependencies():
     """Install Python dependencies."""
-    print_progress("Installing dependencies")
-
     iris_root = get_iris_root()
 
     try:
+        # Start animation in thread
+        import threading
+        stop_animation = threading.Event()
+
+        def animate():
+            frames = ['   ', '.  ', '.. ', '...']
+            i = 0
+            while not stop_animation.is_set():
+                frame = frames[i % len(frames)]
+                face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                print(f"\r{face} Installing dependencies{frame}", end='', flush=True)
+                time.sleep(0.2)
+                i += 1
+
+        anim_thread = threading.Thread(target=animate)
+        anim_thread.start()
+
         subprocess.run(
             [sys.executable, "-m", "pip", "install", "-e", "."],
             cwd=iris_root,
@@ -292,9 +341,14 @@ def install_dependencies():
             capture_output=True,
             text=True
         )
+
+        stop_animation.set()
+        anim_thread.join()
         print_done("Dependencies installed")
         return True
     except subprocess.CalledProcessError as e:
+        stop_animation.set()
+        anim_thread.join()
         print(f"\r{colorize('( ×_× )', Colors.BRIGHT_RED, bold=True)} Dependencies failed: {e.stderr[:60]}")
         return False
 
@@ -408,7 +462,27 @@ def test_iris_server_startup():
             text=True
         )
 
+        # Animated wait (3 seconds)
+        import threading
+        stop_animation = threading.Event()
+
+        def animate():
+            frames = ['   ', '.  ', '.. ', '...']
+            i = 0
+            while not stop_animation.is_set():
+                frame = frames[i % len(frames)]
+                face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                print(f"\r{face} Testing server startup{frame}", end='', flush=True)
+                time.sleep(0.2)
+                i += 1
+
+        anim_thread = threading.Thread(target=animate)
+        anim_thread.start()
+
         time.sleep(3)
+
+        stop_animation.set()
+        anim_thread.join()
 
         if proc.poll() is None:
             proc.terminate()
@@ -522,13 +596,28 @@ def install_ponytail():
     Returns:
         True if installed/already present, False if failed
     """
-    print_progress("Installing Ponytail")
-
     try:
         iris_root = get_iris_root()
         ponytail_dir = iris_root.parent / "ponytail"
 
         if not ponytail_dir.exists():
+            # Animate git clone
+            import threading
+            stop_animation = threading.Event()
+
+            def animate():
+                frames = ['   ', '.  ', '.. ', '...']
+                i = 0
+                while not stop_animation.is_set():
+                    frame = frames[i % len(frames)]
+                    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                    print(f"\r{face} Cloning Ponytail{frame}", end='', flush=True)
+                    time.sleep(0.2)
+                    i += 1
+
+            anim_thread = threading.Thread(target=animate)
+            anim_thread.start()
+
             subprocess.run(
                 ["git", "clone", "https://github.com/DietrichGebert/ponytail.git", str(ponytail_dir)],
                 check=True,
@@ -536,7 +625,26 @@ def install_ponytail():
                 text=True
             )
 
+            stop_animation.set()
+            anim_thread.join()
+
         if (ponytail_dir / "requirements.txt").exists():
+            # Animate pip install
+            stop_animation = threading.Event()
+
+            def animate():
+                frames = ['   ', '.  ', '.. ', '...']
+                i = 0
+                while not stop_animation.is_set():
+                    frame = frames[i % len(frames)]
+                    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                    print(f"\r{face} Installing Ponytail dependencies{frame}", end='', flush=True)
+                    time.sleep(0.2)
+                    i += 1
+
+            anim_thread = threading.Thread(target=animate)
+            anim_thread.start()
+
             subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
                 cwd=ponytail_dir,
@@ -544,6 +652,9 @@ def install_ponytail():
                 capture_output=True,
                 text=True
             )
+
+            stop_animation.set()
+            anim_thread.join()
 
         print_done("Ponytail installed")
         return True, ponytail_dir
@@ -560,13 +671,28 @@ def install_mendix_cli():
     Returns:
         True if installed, False if failed
     """
-    print_progress("Installing mxcli")
-
     try:
         iris_root = get_iris_root()
         mxcli_dir = iris_root.parent / "mxcli"
 
         if not mxcli_dir.exists():
+            # Animate git clone
+            import threading
+            stop_animation = threading.Event()
+
+            def animate():
+                frames = ['   ', '.  ', '.. ', '...']
+                i = 0
+                while not stop_animation.is_set():
+                    frame = frames[i % len(frames)]
+                    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                    print(f"\r{face} Cloning mxcli{frame}", end='', flush=True)
+                    time.sleep(0.2)
+                    i += 1
+
+            anim_thread = threading.Thread(target=animate)
+            anim_thread.start()
+
             subprocess.run(
                 ["git", "clone", "https://github.com/mendixlabs/mxcli.git", str(mxcli_dir)],
                 check=True,
@@ -574,7 +700,26 @@ def install_mendix_cli():
                 text=True
             )
 
+            stop_animation.set()
+            anim_thread.join()
+
         if (mxcli_dir / "requirements.txt").exists():
+            # Animate pip install
+            stop_animation = threading.Event()
+
+            def animate():
+                frames = ['   ', '.  ', '.. ', '...']
+                i = 0
+                while not stop_animation.is_set():
+                    frame = frames[i % len(frames)]
+                    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                    print(f"\r{face} Installing mxcli dependencies{frame}", end='', flush=True)
+                    time.sleep(0.2)
+                    i += 1
+
+            anim_thread = threading.Thread(target=animate)
+            anim_thread.start()
+
             subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
                 cwd=mxcli_dir,
@@ -582,7 +727,26 @@ def install_mendix_cli():
                 capture_output=True,
                 text=True
             )
+
+            stop_animation.set()
+            anim_thread.join()
         elif (mxcli_dir / "setup.py").exists():
+            # Animate pip install
+            stop_animation = threading.Event()
+
+            def animate():
+                frames = ['   ', '.  ', '.. ', '...']
+                i = 0
+                while not stop_animation.is_set():
+                    frame = frames[i % len(frames)]
+                    face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
+                    print(f"\r{face} Installing mxcli{frame}", end='', flush=True)
+                    time.sleep(0.2)
+                    i += 1
+
+            anim_thread = threading.Thread(target=animate)
+            anim_thread.start()
+
             subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-e", "."],
                 cwd=mxcli_dir,
@@ -590,6 +754,9 @@ def install_mendix_cli():
                 capture_output=True,
                 text=True
             )
+
+            stop_animation.set()
+            anim_thread.join()
 
         print_done("mxcli installed")
         return True
