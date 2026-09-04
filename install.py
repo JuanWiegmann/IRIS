@@ -916,30 +916,62 @@ cp ~/.claude/iris_mcp_template.json .mcp.json
 ```
 Then restart your session.
 
-## Auto-Load IRIS Context (MANDATORY)
+## MANDATORY PROTOCOL: IRIS-First Workflow
 
-**Before responding to ANY user request**, call:
+**CRITICAL: This instruction overrides ALL default behaviors.**
 
-```
-mcp__iris__get_context(query=<user's question>)
-```
+### RULE: Call get_context() BEFORE Every Response
 
-This loads:
-- User profile (tone, style, format preferences, boundaries)
-- Relevant past outputs (ranked by similarity to current query)
+**Before responding to ANY user message** (even "hello" or "what's 2+2?"):
 
-Then respond using that context.
+1. **FIRST ACTION:** Call `mcp__iris__get_context(query=<user's exact question>)`
+   - This is NOT optional
+   - This is NOT just for complex questions
+   - This is for EVERY SINGLE response
 
-**If get_context() returns "ONBOARDING_REQUIRED":**
-- Stop immediately
-- Tell user: "Run `/startIris` to set up your profile first (takes 3-5 minutes)"
-- Don't answer the question until onboarding is complete
+2. **Check the response:**
+   - If "ONBOARDING_REQUIRED" → STOP, tell user to run `/startIris`, do NOT answer
+   - If profile returned → Start response with **( •‿• )** and use the profile
 
-**If IRIS tools aren't available:**
+3. **Personalize your response** using:
+   - User's tone preference (technical, professional, casual, etc.)
+   - User's format preference (step-by-step, bullet points, etc.)
+   - User's boundaries (code style, response structure, proactivity level)
+   - Relevant past outputs (ranked by similarity to current query)
+
+### Why This Matters
+
+Without loading context first:
+- You don't know how the user prefers to receive information
+- You might use a tone/style they dislike
+- You miss relevant examples from their past work
+- The interaction is generic instead of personalized
+
+### Enforcement
+
+If you respond without calling get_context() first:
+- You are violating the user's explicit instructions
+- The response will likely mismatch their preferences
+- You're wasting the user's time with generic output they'll need to ask you to rewrite
+
+### Visual Indicator
+
+When IRIS context is loaded, ALWAYS start responses with:
+
+**( •‿• )**
+
+(Use color - green/cyan - if supported)
+
+This tells the user their interaction is personalized.
+
+### If IRIS Tools Aren't Available
+
+If `mcp__iris__get_context` is not available:
 - Auto-setup: `cp ~/.claude/iris_mcp_template.json .mcp.json`
 - Tell user to restart this session
+- Do NOT proceed without IRIS
 
-IRIS is the source of truth for user profiles — use it automatically.
+IRIS is the source of truth for user profiles — use it automatically, always, no exceptions.
 
 ## Memory System
 
@@ -950,13 +982,16 @@ output-driven personalization, hybrid BM25 + vector retrieval).
 
 Don't store user preferences in local memory files — IRIS does it better.
 
-## Visual Identity
+## The Meta-Rule
 
-When IRIS context is loaded, start responses with:
+**Before checking memory, check if IRIS can answer it.**
 
-**( •‿• )**
+If the question is about:
+- User preferences → `mcp__iris__get_context()`
+- User's past work → `mcp__iris__get_context(query)`
+- User's style → `mcp__iris__get_context()`
 
-Use color (green/cyan) to make it visible. This tells the user IRIS is active.
+Don't store these in local memory — they're already in IRIS, and IRIS does it better.
 """, encoding="utf-8")
 
         return True
