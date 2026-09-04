@@ -22,6 +22,11 @@ from pathlib import Path
 
 def build_installer():
     """Build standalone installer executable."""
+    # Fix Windows console encoding
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
     print()
     print("╔═══════════════════════════════════════════════════╗")
     print("║                                                   ║")
