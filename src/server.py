@@ -35,6 +35,14 @@ from src.tools.feedback_categories import (
     handle_get_feedback_categories,
     handle_apply_feedback_change
 )
+from src.tools.project_context import (
+    get_update_project_context_tool,
+    get_query_project_context_tool,
+    get_project_detection_signals_tool,
+    handle_update_project_context,
+    handle_query_project_context,
+    handle_get_project_signals
+)
 from src.tools.onboarding import (
     start_onboarding,
     store_answer,
@@ -278,7 +286,10 @@ async def list_tools() -> list[Tool]:
         get_log_output_tool(),
         get_check_draft_tool(),
         get_feedback_categories_tool(),
-        get_apply_feedback_change_tool()
+        get_apply_feedback_change_tool(),
+        get_update_project_context_tool(),
+        get_query_project_context_tool(),
+        get_project_detection_signals_tool()
     ]
 
 
@@ -314,6 +325,17 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     if name == "apply_feedback_change":
         user_id = get_user_id()
         return await handle_apply_feedback_change(arguments, user_id)
+
+    if name == "update_project_context":
+        user_id = get_user_id()
+        return await handle_update_project_context(arguments, user_id)
+
+    if name == "query_project_context":
+        user_id = get_user_id()
+        return await handle_query_project_context(arguments, user_id)
+
+    if name == "get_project_signals":
+        return await handle_get_project_signals(arguments)
 
     # Onboarding tools
     # Learning: learning/07_user_profiles/README.md#gate-methodology

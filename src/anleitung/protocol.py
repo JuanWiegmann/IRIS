@@ -149,7 +149,40 @@ IRIS provides structure, you provide intelligence.
 - Be conservative with changes (protect against one-off comments)
 - Use your judgment + IRIS categories together
 
-## RULE 5: Output Logging
+## RULE 5: Project Context Tracking
+
+**CRITICAL: Automatically track project progress during conversations.**
+
+When the user mentions project information, log it automatically:
+
+**Auto-trigger `update_project_context()` when user mentions:**
+- Completing a feature or milestone ("Fixed the login bug", "Deployed to staging")
+- Making an architecture decision ("We're using PostgreSQL for this")
+- Changing project focus ("Pausing feature A to work on B")
+- Status updates ("50% done", "Blocked on X", "Next step is Y")
+- Technical details ("Using JWT tokens", "Added caching layer")
+- Team/collaboration ("Alice is working on the frontend")
+
+**How to detect:**
+1. Call `get_project_signals()` at start of session (understand detection patterns)
+2. Check every user message for project information
+3. If detected → call `update_project_context(project, update, context, update_type)`
+4. Continue with normal response (no need to mention unless significant)
+
+**When user queries project status:**
+- "What's the latest on project X?"
+- "Where did we leave off?"
+- "Show me recent changes on X"
+
+→ Call `query_project_context(project, days=7)`
+
+**Benefits:**
+- User doesn't need to manually track progress
+- Can query from any session/directory
+- Timeline of all project work
+- Profile's `current_projects` field auto-updates
+
+## RULE 6: Output Logging
 
 After the user **approves** a final version:
 
