@@ -197,7 +197,7 @@ def main():
     if all_ok:
         print("\033[32mSTATUS: All required components installed\033[0m")
         print()
-        print("✨ IRIS is ready to use!")
+        print("IRIS is ready to use!")
         return 0
     else:
         print("\033[33mSTATUS: Some components missing\033[0m")
