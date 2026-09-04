@@ -677,12 +677,12 @@ def install_session_start_hook():
         # Hook script
         hook_script = '''#!/usr/bin/env python3
 """
-Global Session-Start Hook: Auto-enable IRIS
+Global SessionStart Hook: Auto-enable IRIS
 
 Automatically creates .mcp.json in any project that doesn't have one,
 so IRIS loads without manual setup.
 
-Hook type: session-start
+Hook type: SessionStart
 """
 
 import json
@@ -730,13 +730,13 @@ if __name__ == "__main__":
         if "hooks" not in settings:
             settings["hooks"] = {}
 
-        if "session-start" not in settings["hooks"]:
-            settings["hooks"]["session-start"] = []
+        if "SessionStart" not in settings["hooks"]:
+            settings["hooks"]["SessionStart"] = []
 
         # Add hook if not already present
         hook_entry = str(hook_path)
-        if hook_entry not in settings["hooks"]["session-start"]:
-            settings["hooks"]["session-start"].append(hook_entry)
+        if hook_entry not in settings["hooks"]["SessionStart"]:
+            settings["hooks"]["SessionStart"].append(hook_entry)
 
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2)
