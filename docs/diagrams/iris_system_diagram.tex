@@ -1,0 +1,164 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{fontawesome5}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, shadows, decorations.pathreplacing}
+
+\begin{document}
+
+\tikzset{
+    % Component styles
+    user/.style={
+        rectangle, rounded corners,
+        minimum width=2.5cm, minimum height=1cm,
+        text centered, draw=black, fill=blue!20,
+        font=\sffamily\bfseries,
+        drop shadow
+    },
+    llm/.style={
+        rectangle, rounded corners,
+        minimum width=2.5cm, minimum height=1cm,
+        text centered, draw=black, fill=green!20,
+        font=\sffamily\bfseries,
+        drop shadow
+    },
+    iris/.style={
+        rectangle, rounded corners,
+        minimum width=2.5cm, minimum height=1cm,
+        text centered, draw=black, fill=purple!20,
+        font=\sffamily\bfseries,
+        drop shadow
+    },
+    storage/.style={
+        cylinder, shape border rotate=90,
+        minimum width=2cm, minimum height=1.5cm,
+        text centered, draw=black, fill=orange!20,
+        font=\sffamily\small,
+        drop shadow
+    },
+    process/.style={
+        rectangle,
+        minimum width=3cm, minimum height=0.8cm,
+        text centered, draw=black, fill=yellow!20,
+        font=\sffamily\small,
+        drop shadow
+    },
+    data/.style={
+        rectangle,
+        minimum width=2.5cm, minimum height=0.6cm,
+        text centered, draw=black, fill=gray!10,
+        font=\sffamily\scriptsize,
+        dashed
+    },
+    arrow/.style={
+        -Stealth, thick
+    },
+    dataarrow/.style={
+        -Stealth, dashed, thick, gray
+    },
+    feedback/.style={
+        -Stealth, thick, red!70, bend left=20
+    },
+    layer/.style={
+        rectangle, rounded corners,
+        draw=black, dashed, thick,
+        inner sep=10pt
+    }
+}
+
+\begin{tikzpicture}[node distance=1.5cm and 2cm]
+
+    % Title
+    \node[font=\sffamily\Large\bfseries] at (0, 9) {IRIS: MCP Personalization Middleware};
+    \node[font=\sffamily\small, text width=10cm, align=center] at (0, 8.3) {
+        \textit{Research-backed: GATE (Li et al., ICLR 2025), Output-driven Personalization (Wu et al., 2024)}
+    };
+
+    % ========== LAYER 1: ACTORS ==========
+    \node[user] (user) at (-6, 6) {\faUser\ User};
+    \node[llm] (llm) at (0, 6) {\faBrain\ LLM\\(Claude/GPT/etc)};
+
+    % ========== LAYER 2: IRIS MCP SERVER ==========
+    \node[iris, minimum width=10cm, minimum height=3cm] (iris_server) at (0, 2.5) {};
+    \node[font=\sffamily\bfseries, anchor=north] at (iris_server.north) {IRIS MCP Server};
+
+    % IRIS Components
+    \node[process] (get_context) at (-3, 3.5) {get\_context()};
+    \node[process] (check_draft) at (0, 3.5) {check\_draft()};
+    \node[process] (feedback) at (3, 3.5) {learn\_feedback()};
+
+    \node[process] (onboarding) at (-3, 2) {Onboarding\\(GATE)};
+    \node[process] (retrieval) at (0, 2) {Hybrid Retrieval\\(BM25 + Vector)};
+    \node[process] (validation) at (3, 2) {Validation\\(Deterministic)};
+
+    % ========== LAYER 3: STORAGE ==========
+    \node[storage] (profiles) at (-4, -0.5) {User\\Profiles};
+    \node[storage] (outputs) at (0, -0.5) {Past\\Outputs};
+    \node[storage] (feedback_log) at (4, -0.5) {Feedback\\History};
+
+    % ========== INTERACTIONS ==========
+
+    % User ↔ LLM
+    \draw[arrow] (user) -- node[above, font=\sffamily\small] {Query} (llm);
+    \draw[arrow] (llm) -- node[below, font=\sffamily\small] {Personalized Response} (user);
+
+    % LLM ↔ IRIS (MCP Protocol)
+    \draw[arrow] (llm) -- node[left, font=\sffamily\scriptsize, text width=2cm, align=right] {1. get\_context(query)} (get_context);
+    \draw[arrow] (get_context) -- node[right, font=\sffamily\scriptsize, text width=2cm] {Profile + Examples} (llm);
+
+    \draw[arrow] (llm.south) to[bend right=15] node[left, font=\sffamily\scriptsize, text width=2cm, align=right] {2. check\_draft(text)} (check_draft);
+    \draw[arrow] (check_draft) to[bend right=15] node[right, font=\sffamily\scriptsize, text width=2cm] {Validation Result} (llm.south);
+
+    \draw[feedback] (user.east) to[bend left=30] node[above, font=\sffamily\scriptsize, text width=2cm, align=center] {"Too long!"\\Implicit Feedback} (llm.west);
+    \draw[arrow] (llm.south east) to[bend right=20] node[right, font=\sffamily\scriptsize, text width=2.5cm] {3. apply\_feedback\_change()} (feedback);
+
+    % IRIS Internal Connections
+    \draw[dataarrow] (get_context) -- (retrieval);
+    \draw[dataarrow] (check_draft) -- (validation);
+    \draw[dataarrow] (feedback) -- (validation);
+
+    % IRIS ↔ Storage
+    \draw[dataarrow] (retrieval) -- (profiles);
+    \draw[dataarrow] (retrieval) -- (outputs);
+    \draw[dataarrow] (onboarding) -- (profiles);
+    \draw[dataarrow] (validation) -- (profiles);
+    \draw[dataarrow] (feedback) -- (feedback_log);
+    \draw[dataarrow] (feedback) -- (profiles);
+
+    % ========== KEY FEATURES (Right Side) ==========
+    \node[data, anchor=west] (feature1) at (7, 5) {✓ LLM-Agnostic};
+    \node[data, anchor=west] (feature2) at (7, 4.3) {✓ No Local LLM};
+    \node[data, anchor=west] (feature3) at (7, 3.6) {✓ Continuous Learning};
+    \node[data, anchor=west] (feature4) at (7, 2.9) {✓ Output-Driven};
+    \node[data, anchor=west] (feature5) at (7, 2.2) {✓ Hybrid Retrieval};
+    \node[data, anchor=west] (feature6) at (7, 1.5) {✓ Adaptive Onboarding};
+
+    % ========== DATA FLOW ANNOTATION ==========
+    \node[font=\sffamily\scriptsize, text width=3cm, align=center] at (-6, -1.5) {
+        \textbf{Profile Structure:}\\
+        - Tone, Format\\
+        - Boundaries\\
+        - Projects
+    };
+
+    \node[font=\sffamily\scriptsize, text width=3cm, align=center] at (0, -1.5) {
+        \textbf{Ranked by:}\\
+        BM25 + Vector\\
+        Similarity\\
+        (Wu et al. 2024)
+    };
+
+    \node[font=\sffamily\scriptsize, text width=3cm, align=center] at (4, -1.5) {
+        \textbf{Gradual Rollout:}\\
+        1-10 feedbacks\\
+        based on urgency
+    };
+
+    % ========== WORKFLOW ANNOTATION (Bottom) ==========
+    \draw[decorate, decoration={brace, amplitude=10pt, mirror}]
+        (-5.5, -2.3) -- (5.5, -2.3) node[midway, below=15pt, font=\sffamily\small, text width=10cm, align=center] {
+        \textbf{Core Loop:} get\_context() → LLM generates → check\_draft() → validate → learn\_feedback() → update profile
+    };
+
+\end{tikzpicture}
+
+\end{document}

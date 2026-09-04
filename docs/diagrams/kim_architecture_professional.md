@@ -1,4 +1,4 @@
-# KIM System Architecture — Professional Diagram
+# IRIS System Architecture — Professional Diagram
 
 **Version:** 1.0  
 **Date:** 2026-08-25  
@@ -11,7 +11,7 @@
 ```mermaid
 graph TB
     %% Title
-    title[<b>KIM System Architecture</b><br/>MCP Middleware for LLM Personalization]
+    title[<b>IRIS System Architecture</b><br/>MCP Middleware for LLM Personalization]
     
     %% External Layer
     User([👤 User])
@@ -22,8 +22,8 @@ graph TB
     %% MCP Connection
     LLM <-->|MCP Protocol<br/>JSON-RPC 2.0| MCP_Interface
     
-    %% KIM System Box
-    subgraph KIM["🔷 KIM Middleware Server (No Internal LLM)"]
+    %% IRIS System Box
+    subgraph IRIS["🔷 IRIS Middleware Server (No Internal LLM)"]
         direction TB
         
         %% Interface Layer
@@ -106,26 +106,26 @@ graph TB
 sequenceDiagram
     participant User
     participant LLM as User's LLM
-    participant KIM as KIM Server
+    participant IRIS as IRIS Server
     participant Data as Data Store
 
     User->>LLM: "Write an email"
     
     Note over LLM: Needs context
-    LLM->>KIM: get_context(query)
-    KIM->>Data: Load profile
-    Data-->>KIM: User profile
-    KIM->>Data: Search relevant outputs
-    Data-->>KIM: Past emails (ranked)
-    KIM-->>LLM: {profile, outputs, memory}
+    LLM->>IRIS: get_context(query)
+    IRIS->>Data: Load profile
+    Data-->>IRIS: User profile
+    IRIS->>Data: Search relevant outputs
+    Data-->>IRIS: Past emails (ranked)
+    IRIS-->>LLM: {profile, outputs, memory}
     
     Note over LLM: Generates draft<br/>using context
     
-    LLM->>KIM: check_draft(draft)
-    KIM->>Data: Load profile rules
-    Data-->>KIM: Tone, format, boundaries
-    Note over KIM: Deterministic validation<br/>(no LLM needed)
-    KIM-->>LLM: {is_valid, issues[]}
+    LLM->>IRIS: check_draft(draft)
+    IRIS->>Data: Load profile rules
+    Data-->>IRIS: Tone, format, boundaries
+    Note over IRIS: Deterministic validation<br/>(no LLM needed)
+    IRIS-->>LLM: {is_valid, issues[]}
     
     Note over LLM: Revises if needed
     
@@ -133,11 +133,11 @@ sequenceDiagram
     
     Note over User: Approves
     
-    LLM->>KIM: log_output(final_text)
-    KIM->>Data: Store text
-    KIM->>Data: Generate embedding (async)
-    KIM->>Data: Update vector index
-    KIM-->>LLM: Success
+    LLM->>IRIS: log_output(final_text)
+    IRIS->>Data: Store text
+    IRIS->>Data: Generate embedding (async)
+    IRIS->>Data: Update vector index
+    IRIS-->>LLM: Success
 ```
 
 ---
@@ -148,44 +148,44 @@ sequenceDiagram
 sequenceDiagram
     participant User
     participant LLM as User's LLM
-    participant KIM as KIM Server
+    participant IRIS as IRIS Server
     participant GATE as GATE State
 
     User->>LLM: "Let's set up my profile"
     
-    LLM->>KIM: get_targets()
-    KIM->>GATE: Load all targets
-    GATE-->>KIM: Open targets + barriers
-    KIM-->>LLM: Target list<br/>{dimension, research, barrier}
+    LLM->>IRIS: get_targets()
+    IRIS->>GATE: Load all targets
+    GATE-->>IRIS: Open targets + barriers
+    IRIS-->>LLM: Target list<br/>{dimension, research, barrier}
     
     Note over LLM: Freely decides strategy:<br/>edge-case question
     
     LLM->>User: "Would you prefer A or B?"
     User->>LLM: "Option A"
     
-    LLM->>KIM: store_insight(target_id, evidence)
-    KIM->>GATE: Record evidence
+    LLM->>IRIS: store_insight(target_id, evidence)
+    IRIS->>GATE: Record evidence
     GATE->>GATE: Check barrier
-    GATE-->>KIM: Barrier status
-    KIM-->>LLM: {satisfied: false, needs_more}
+    GATE-->>IRIS: Barrier status
+    IRIS-->>LLM: {satisfied: false, needs_more}
     
     Note over LLM: Asks follow-up
     
     LLM->>User: "In what situations...?"
     User->>LLM: Answer
     
-    LLM->>KIM: store_insight(target_id, evidence)
-    KIM->>GATE: Record evidence
+    LLM->>IRIS: store_insight(target_id, evidence)
+    IRIS->>GATE: Record evidence
     GATE->>GATE: Check barrier
-    GATE-->>KIM: Barrier status
-    KIM-->>LLM: {satisfied: true}
+    GATE-->>IRIS: Barrier status
+    IRIS-->>LLM: {satisfied: true}
     
     Note over LLM: Move to next target
     
-    LLM->>KIM: get_targets()
-    KIM-->>LLM: Fewer open targets
+    LLM->>IRIS: get_targets()
+    IRIS-->>LLM: Fewer open targets
     
-    Note over LLM,KIM: Loop until<br/>minimum viable profile
+    Note over LLM,IRIS: Loop until<br/>minimum viable profile
 ```
 
 ---
@@ -254,26 +254,26 @@ graph TB
         
         LLM_App[LLM Client Application<br/>Claude Desktop / VSCode / etc.]
         
-        subgraph KIM_Process["🐍 KIM Server Process"]
+        subgraph IRIS_Process["🐍 IRIS Server Process"]
             Server[Python 3.11+<br/>MCP SDK<br/>Port: stdio or :8080]
         end
         
         subgraph Storage["💾 File System"]
-            Profiles[~/.kim/data/profiles/]
-            Outputs[~/.kim/data/outputs/]
-            Memory[~/.kim/data/memory/]
-            Vectors[~/.kim/data/vectors/]
+            Profiles[~/.iris/data/profiles/]
+            Outputs[~/.iris/data/outputs/]
+            Memory[~/.iris/data/memory/]
+            Vectors[~/.iris/data/vectors/]
         end
         
-        LLM_App <-->|MCP: stdio or HTTP| KIM_Process
-        KIM_Process -->|File I/O| Storage
+        LLM_App <-->|MCP: stdio or HTTP| IRIS_Process
+        IRIS_Process -->|File I/O| Storage
     end
     
     subgraph Optional["☁️ Optional External Service"]
         Embedding[Embedding API<br/>OpenAI / Cohere / Local]
     end
     
-    KIM_Process -.->|HTTPS<br/>text-embedding-3-small| Embedding
+    IRIS_Process -.->|HTTPS<br/>text-embedding-3-small| Embedding
     
     style Client fill:#FFF9C4,stroke:#F57F17,stroke-width:2px
     style Optional fill:#E8EAF6,stroke:#3F51B5,stroke-width:1px,stroke-dasharray: 5 5

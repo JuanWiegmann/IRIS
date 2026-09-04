@@ -1,0 +1,142 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, backgrounds, decorations.pathmorphing}
+
+\begin{document}
+
+\tikzset{
+    data/.style={
+        ellipse,
+        minimum width=2.5cm, minimum height=1cm,
+        text centered, draw=black, fill=cyan!20,
+        font=\sffamily\small,
+        drop shadow
+    },
+    process/.style={
+        rectangle, rounded corners,
+        minimum width=2.8cm, minimum height=1cm,
+        text centered, draw=black, fill=yellow!20,
+        font=\sffamily\small\bfseries,
+        drop shadow
+    },
+    storage/.style={
+        cylinder, shape border rotate=90,
+        minimum width=2cm, minimum height=1.2cm,
+        text centered, draw=black, fill=orange!20,
+        font=\sffamily\small,
+        drop shadow
+    },
+    output/.style={
+        rectangle, rounded corners,
+        minimum width=2.5cm, minimum height=0.8cm,
+        text centered, draw=black, fill=green!20,
+        font=\sffamily\small\bfseries,
+        drop shadow
+    },
+    flow/.style={
+        -Stealth, thick
+    },
+    research/.style={
+        rectangle, rounded corners,
+        draw=purple, fill=purple!10,
+        font=\sffamily\tiny,
+        align=center
+    }
+}
+
+\begin{tikzpicture}[node distance=1.8cm]
+
+    % Title
+    \node[font=\sffamily\Large\bfseries] at (6, 10.5) {IRIS Data Flow: From Raw Input to Personalized Output};
+
+    % ========== ONBOARDING PHASE ==========
+    \node[font=\sffamily\bfseries, anchor=west] at (-1, 9) {PHASE 1: Onboarding};
+
+    \node[data] (user_answers) at (0, 7.5) {User\\Answers};
+    \node[process] (gate) at (4, 7.5) {GATE\\Elicitation};
+    \node[storage] (profile_store) at (8, 7.5) {User\\Profile};
+
+    \draw[flow] (user_answers) -- (gate);
+    \draw[flow] (gate) -- node[above, font=\sffamily\scriptsize] {preferences} (profile_store);
+
+    \node[research] at (4, 6.5) {Li et al., ICLR 2025\\Edge-case questions\\reveal tacit knowledge};
+
+    % ========== QUERY PROCESSING PHASE ==========
+    \node[font=\sffamily\bfseries, anchor=west] at (-1, 5.5) {PHASE 2: Context Retrieval};
+
+    \node[data] (query) at (0, 4) {User\\Query};
+    \node[process] (bm25) at (4, 5) {BM25\\Search};
+    \node[process] (vector) at (4, 3) {Vector\\Search};
+    \node[storage] (outputs_store) at (8, 4) {Past\\Outputs};
+    \node[process] (hybrid) at (11, 4) {Hybrid\\Ranking};
+
+    \draw[flow] (query) -- (bm25);
+    \draw[flow] (query) -- (vector);
+    \draw[flow] (bm25) -- (outputs_store);
+    \draw[flow] (vector) -- (outputs_store);
+    \draw[flow] (outputs_store) -- node[above, font=\sffamily\scriptsize] {candidates} (hybrid);
+
+    \node[research] at (11, 2.8) {Wu et al. 2024\\Output-driven\\personalization};
+
+    % ========== CONTEXTUALIZATION PHASE ==========
+    \node[font=\sffamily\bfseries, anchor=west] at (-1, 1.5) {PHASE 3: Contextualization};
+
+    \node[process] (context_builder) at (4, 0) {Build\\Context};
+    \node[output] (context_output) at (8, 0) {Profile +\\Ranked Examples};
+
+    \draw[flow] (profile_store) to[bend right=30] node[left, font=\sffamily\scriptsize, text width=1.5cm, align=right] {tone, format,\\boundaries} (context_builder);
+    \draw[flow] (hybrid) to[bend left=30] node[right, font=\sffamily\scriptsize, text width=1.5cm] {top-k\\relevant} (context_builder);
+    \draw[flow] (context_builder) -- (context_output);
+
+    % ========== GENERATION PHASE ==========
+    \node[font=\sffamily\bfseries, anchor=west] at (-1, -2) {PHASE 4: Response Generation};
+
+    \node[data] (llm_input) at (0, -3.5) {LLM +\\Context};
+    \node[process] (generate) at (4, -3.5) {Generate\\Draft};
+    \node[process] (validate) at (8, -3.5) {Validate\\Draft};
+    \node[output] (final_response) at (12, -3.5) {Personalized\\Response};
+
+    \draw[flow] (context_output) to[bend left=20] (llm_input);
+    \draw[flow] (llm_input) -- (generate);
+    \draw[flow] (generate) -- node[above, font=\sffamily\scriptsize] {draft} (validate);
+    \draw[flow] (validate) -- node[above, font=\sffamily\scriptsize] {✓ pass} (final_response);
+
+    \draw[flow, dashed, red] (validate) to[bend right=45] node[below, font=\sffamily\scriptsize, text width=2cm, align=center] {✗ fail\\revise} (generate);
+
+    % ========== LEARNING PHASE ==========
+    \node[font=\sffamily\bfseries, anchor=west] at (-1, -5.5) {PHASE 5: Continuous Learning};
+
+    \node[data] (feedback) at (0, -7) {User\\Feedback};
+    \node[process] (detect) at (4, -7) {Detect\\Signals};
+    \node[process] (analyze) at (8, -7) {Analyze\\Sentiment};
+    \node[process] (decide) at (12, -7) {Decide\\Update};
+
+    \draw[flow] (feedback) -- (detect);
+    \draw[flow] (detect) -- node[above, font=\sffamily\scriptsize] {categories} (analyze);
+    \draw[flow] (analyze) -- node[above, font=\sffamily\scriptsize] {urgency} (decide);
+
+    \node[storage] (feedback_log) at (12, -8.5) {Feedback\\History};
+    \draw[flow] (decide) -- (feedback_log);
+
+    \draw[flow, thick, blue] (decide) to[bend right=60] node[right, font=\sffamily\scriptsize, text width=2cm] {update\\if threshold\\met} (profile_store);
+
+    \node[research] at (8, -8.5) {Westhaeusser et al.\\Continuous learning\\from implicit feedback};
+
+    % ========== DATA TRANSFORMATIONS (annotations) ==========
+    \begin{scope}[on background layer]
+        % Highlight research-backed components
+        \node[fill=purple!5, rounded corners, fit={(gate)}, inner sep=8pt, draw=purple, dashed, thick] {};
+        \node[fill=purple!5, rounded corners, fit={(hybrid)}, inner sep=8pt, draw=purple, dashed, thick] {};
+        \node[fill=purple!5, rounded corners, fit={(detect) (analyze) (decide)}, inner sep=8pt, draw=purple, dashed, thick] {};
+    \end{scope}
+
+    % Legend
+    \node[font=\sffamily\small\bfseries] at (6, -10) {Key Insight: User Outputs → Better Predictor than Inputs};
+    \node[font=\sffamily\scriptsize, text width=12cm, align=center] at (6, -10.6) {
+        Traditional systems learn from what users \textit{say}. IRIS learns from what users \textit{produce and approve}.\\
+        This matches research showing past outputs predict future preferences better than past inputs.
+    };
+
+\end{tikzpicture}
+
+\end{document}

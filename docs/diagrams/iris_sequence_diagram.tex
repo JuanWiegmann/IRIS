@@ -1,0 +1,137 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, calc, backgrounds, shadows}
+
+\begin{document}
+
+\tikzset{
+    actor/.style={
+        rectangle, rounded corners,
+        minimum width=2cm, minimum height=0.8cm,
+        text centered, draw=black, fill=blue!20,
+        font=\sffamily\bfseries,
+        drop shadow
+    },
+    lifeline/.style={
+        thick, dashed, gray
+    },
+    message/.style={
+        -Stealth, thick
+    },
+    return/.style={
+        -Stealth, thick, dashed
+    },
+    note/.style={
+        rectangle, rounded corners,
+        draw=black, fill=yellow!20,
+        font=\sffamily\scriptsize,
+        align=left,
+        drop shadow
+    },
+    activation/.style={
+        rectangle, fill=white, draw=black, thick,
+        minimum width=0.4cm
+    }
+}
+
+\begin{tikzpicture}[node distance=3cm]
+
+    % Title
+    \node[font=\sffamily\Large\bfseries] at (5, 11) {IRIS Interaction Sequence};
+
+    % Actors
+    \node[actor] (user) at (0, 10) {User};
+    \node[actor] (llm) at (4, 10) {LLM};
+    \node[actor] (iris) at (8, 10) {IRIS};
+    \node[actor] (storage) at (12, 10) {Storage};
+
+    % Lifelines
+    \draw[lifeline] (user.south) -- (0, -1);
+    \draw[lifeline] (llm.south) -- (4, -1);
+    \draw[lifeline] (iris.south) -- (8, -1);
+    \draw[lifeline] (storage.south) -- (12, -1);
+
+    % Sequence 1: User Query
+    \draw[message] (0, 9) -- node[above, font=\sffamily\small] {1. Query} (4, 9);
+    \node[activation] (llm1) at (4, 8.5) {};
+
+    % Sequence 2: Get Context
+    \draw[message] (4, 8.5) -- node[above, font=\sffamily\small] {2. get\_context(query)} (8, 8.5);
+    \node[activation] (iris1) at (8, 8) {};
+
+    \draw[message] (8, 7.8) -- node[above, font=\sffamily\scriptsize] {load profile} (12, 7.8);
+    \draw[return] (12, 7.5) -- node[below, font=\sffamily\scriptsize] {profile data} (8, 7.5);
+
+    \draw[message] (8, 7.2) -- node[above, font=\sffamily\scriptsize] {search outputs} (12, 7.2);
+    \draw[return] (12, 6.9) -- node[below, font=\sffamily\scriptsize] {ranked results} (8, 6.9);
+
+    \draw[return] (8, 6.5) -- node[above, font=\sffamily\small] {Profile + Examples} (4, 6.5);
+
+    \node[note, anchor=west] at (13, 7.3) {BM25 + Vector\\Similarity\\(Wu et al. 2024)};
+
+    % Sequence 3: LLM Generates Draft
+    \node[note, anchor=east] at (-1, 5.8) {LLM uses profile\\to personalize};
+    \draw[thick] (4, 6.2) -- (4, 5.2);
+    \node[font=\sffamily\small, text centered] at (4, 5.7) {Generate Draft};
+
+    % Sequence 4: Check Draft
+    \draw[message] (4, 5) -- node[above, font=\sffamily\small] {3. check\_draft(text)} (8, 5);
+    \node[activation] (iris2) at (8, 4.5) {};
+
+    \draw[message] (8, 4.3) -- node[above, font=\sffamily\scriptsize] {validate} (12, 4.3);
+    \draw[return] (12, 4) -- node[below, font=\sffamily\scriptsize] {validation result} (8, 4);
+
+    \draw[return] (8, 3.6) -- node[above, font=\sffamily\small] {Pass/Fail + Issues} (4, 3.6);
+
+    \node[note, anchor=west] at (13, 4.2) {Deterministic\\rules};
+
+    % Sequence 5: Show Response
+    \draw[message] (4, 3.2) -- node[above, font=\sffamily\small] {4. \textbf{( •‿• )} Response} (0, 3.2);
+
+    % Sequence 6: User Feedback
+    \draw[message] (0, 2.8) -- node[above, font=\sffamily\small] {5. "Too long!"} (4, 2.8);
+    \node[activation] (llm2) at (4, 2.3) {};
+
+    % Sequence 7: Get Categories
+    \draw[message] (4, 2.3) -- node[above, font=\sffamily\scriptsize] {get\_feedback\_categories()} (8, 2.3);
+    \node[activation] (iris3) at (8, 1.9) {};
+    \draw[return] (8, 1.6) -- node[above, font=\sffamily\scriptsize] {categories + rules} (4, 1.6);
+
+    \node[note, anchor=west] at (13, 2) {Detection\\patterns\\thresholds};
+
+    % Sequence 8: LLM Analyzes
+    \draw[thick] (4, 1.3) -- (4, 0.8);
+    \node[font=\sffamily\scriptsize, text centered] at (4, 1.05) {Analyze\\Sentiment};
+
+    % Sequence 9: Apply Change
+    \draw[message] (4, 0.5) -- node[above, font=\sffamily\scriptsize] {apply\_feedback\_change(...)} (8, 0.5);
+    \node[activation] (iris4) at (8, 0) {};
+
+    \draw[message] (8, -0.2) -- node[above, font=\sffamily\scriptsize] {update profile} (12, -0.2);
+    \draw[return] (12, -0.5) -- node[below, font=\sffamily\scriptsize] {success} (8, -0.5);
+
+    \draw[return] (8, -0.8) -- node[above, font=\sffamily\scriptsize] {Updated} (4, -0.8);
+
+    \node[note, anchor=west] at (13, -0.2) {Gradual\\rollout};
+
+    % Sequence 10: Mention Change
+    \draw[message] (4, -1.2) -- node[above, font=\sffamily\small] {6. "Updated profile. [Answer...]"} (0, -1.2);
+
+    % Highlight research-backed steps
+    \begin{scope}[on background layer]
+        \node[fill=green!10, rounded corners, fit={(8, 8.5) (12, 6.5)}, inner sep=5pt, draw=green!50, dashed, thick] {};
+        \node[font=\sffamily\tiny, text=green!50!black] at (10, 8.8) {Output-driven (Wu et al.)};
+    \end{scope}
+
+    % Legend
+    \node[font=\sffamily\small\bfseries] at (5, -2.5) {Key Steps};
+    \node[font=\sffamily\scriptsize, text width=10cm, align=center] at (5, -3) {
+        1-2: Load profile + context (GATE) →
+        3: Validate draft →
+        4: Show personalized response →
+        5-6: Learn from feedback (continuous adaptation)
+    };
+
+\end{tikzpicture}
+
+\end{document}
