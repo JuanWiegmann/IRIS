@@ -11,7 +11,48 @@ Checks if all components are installed:
 """
 import subprocess
 import json
+import sys
+import time
 from pathlib import Path
+
+
+# Spinner frames (npm-style)
+SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+
+def spinner_check(label, check_fn):
+    """
+    Run check with animated spinner (npm-style).
+
+    Args:
+        label: What's being checked
+        check_fn: Function that returns (bool, msg) or bool
+
+    Returns:
+        (status, msg)
+    """
+    # Start spinner
+    for i in range(5):  # ~0.5 seconds
+        frame = SPINNER_FRAMES[i % len(SPINNER_FRAMES)]
+        sys.stdout.write(f'\r{frame} Checking {label}...')
+        sys.stdout.flush()
+        time.sleep(0.1)
+
+    # Run check
+    result = check_fn()
+
+    # Handle result
+    if isinstance(result, tuple):
+        status, msg = result
+    else:
+        status = result
+        msg = "OK" if status else "Missing"
+
+    # Clear spinner line
+    sys.stdout.write('\r' + ' ' * 60 + '\r')
+    sys.stdout.flush()
+
+    return status, msg
 
 
 def check_iris_server():
@@ -112,9 +153,14 @@ def check_ponytail():
 
 
 def main():
-    print("=" * 60)
-    print("IRIS Installation Check")
-    print("=" * 60)
+    # Fix Windows console encoding
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    print()
+    print("\033[1m\033[36m>> IRIS Installation Check\033[0m")
+    print()
 
     checks = [
         ("iris-server command", check_iris_server),
@@ -127,39 +173,36 @@ def main():
     all_ok = True
     results = []
 
+    # Run checks with animation
     for name, check_fn in checks:
-        result = check_fn()
-
-        # Handle both bool and (bool, msg) returns
-        if isinstance(result, tuple):
-            status, msg = result
-        else:
-            status = result
-            msg = "OK" if status else "Missing"
-
+        status, msg = spinner_check(name, check_fn)
         results.append((name, status, msg))
 
         if not status and "optional" not in msg.lower():
             all_ok = False
 
-    # Print results
+    # Print results (npm-style)
     print()
     for name, status, msg in results:
-        symbol = "[OK]" if status else "[MISSING]"
-        print(f"{symbol:10} {name:25} {msg}")
+        if status:
+            symbol = "\033[32m✓\033[0m"  # Green checkmark
+        else:
+            symbol = "\033[31m✗\033[0m"  # Red X
+
+        print(f"{symbol} {name:25} \033[2m{msg}\033[0m")
 
     print()
     print("=" * 60)
 
     if all_ok:
-        print("STATUS: All required components installed")
+        print("\033[32mSTATUS: All required components installed\033[0m")
         print()
-        print("IRIS is ready to use!")
+        print("✨ IRIS is ready to use!")
         return 0
     else:
-        print("STATUS: Some components missing")
+        print("\033[33mSTATUS: Some components missing\033[0m")
         print()
-        print("Run: python install.py")
+        print("Run: \033[36mpython install.py\033[0m")
         return 1
 
 
