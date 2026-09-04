@@ -74,15 +74,15 @@ def print_animated_logo():
     # Animation frames - cycling through expressions
     frames = [
         # Neutral
-        f"{colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('initializing...', Colors.DIM + Colors.WHITE)}",
+        f"{colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('initializing...', Colors.DIM + Colors.WHITE)}",
         # Looking left (checking past)
-        f"{colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( ←_• )', Colors.BRIGHT_MAGENTA)} {colorize('scanning memory...', Colors.DIM + Colors.WHITE)}",
+        f"{colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( ←_• )', Colors.BRIGHT_MAGENTA)} {colorize('scanning memory...', Colors.DIM + Colors.WHITE)}",
         # Thinking
-        f"{colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( ·_· )', Colors.WHITE)} {colorize('processing...', Colors.DIM + Colors.WHITE)}",
+        f"{colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( ·_· )', Colors.WHITE)} {colorize('processing...', Colors.DIM + Colors.WHITE)}",
         # Looking right (seeing present)
-        f"{colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_→ )', Colors.BRIGHT_BLUE)} {colorize('ready to serve...', Colors.DIM + Colors.WHITE)}",
+        f"{colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_→ )', Colors.BRIGHT_BLUE)} {colorize('ready to serve...', Colors.DIM + Colors.WHITE)}",
         # Happy
-        f"{colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)} {colorize('JANUS online!', Colors.BRIGHT_GREEN)}",
+        f"{colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)} {colorize('IRIS online!', Colors.BRIGHT_GREEN)}",
     ]
 
     # Play animation on single line
@@ -98,7 +98,7 @@ def print_animated_logo():
     print()
     print()
     print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
-    print(f"                {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)}")
+    print(f"                {colorize('I R I S', Colors.BRIGHT_WHITE, bold=True)}")
     print(f"                {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)}")
     print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
     print()
@@ -113,7 +113,7 @@ def print_logo():
 
 
 def print_status(message: str, status: str = "info"):
-    """Print a status message with Janus JANUS face."""
+    """Print a status message with Janus IRIS face."""
     if status == "success":
         face = colorize("( •‿• )", Colors.BRIGHT_GREEN, bold=True)  # Happy
     elif status == "error":
@@ -127,19 +127,19 @@ def print_status(message: str, status: str = "info"):
 
 
 def print_progress(message: str, end: str = ''):
-    """Print progress on same line with JANUS looking left (searching)."""
+    """Print progress on same line with IRIS looking left (searching)."""
     face = colorize("( ←_• )", Colors.BRIGHT_CYAN, bold=True)
     print(f"\r{face} {message}...", end=end, flush=True)
 
 
 def print_done(message: str):
-    """Complete a progress line with happy JANUS face."""
+    """Complete a progress line with happy IRIS face."""
     face = colorize("( •‿• )", Colors.BRIGHT_GREEN, bold=True)
     print(f"\r{face} {message}                    ")  # Extra spaces to clear
 
 
 def print_skip(message: str):
-    """Complete a progress line with neutral JANUS face."""
+    """Complete a progress line with neutral IRIS face."""
     face = colorize("( •_• )", Colors.DIM + Colors.YELLOW)
     print(f"\r{face} {message}                    ")
 
@@ -1151,11 +1151,11 @@ def main():
     if all_installed:
         print()
         print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
-        print(f"                {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)}")
+        print(f"                {colorize('I R I S', Colors.BRIGHT_WHITE, bold=True)}")
         print(f"                {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)}")
         print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
         print()
-        print(f"       {colorize('JANUS ist bereits installiert!', Colors.BRIGHT_GREEN)}")
+        print(f"       {colorize('IRIS ist bereits installiert!', Colors.BRIGHT_GREEN)}")
         print(f"       {colorize('IRIS is ready to use', Colors.WHITE)}")
         print()
         print(f"       Start Claude Code and run {colorize('/startIris', Colors.BRIGHT_CYAN, bold=True)} to begin")
@@ -1165,7 +1165,7 @@ def main():
     # Partially installed - show what's missing
     if missing:
         print()
-        print(f"    {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_YELLOW)}")
+        print(f"    {colorize('I R I S', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_YELLOW)}")
         print()
         print(f"       {colorize('Missing components:', Colors.BRIGHT_YELLOW)}")
         for component in missing:
@@ -1176,7 +1176,7 @@ def main():
 
     # Not installed - show setup needed
     print()
-    print(f"    {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('nicht bereit - Installation erforderlich', Colors.BRIGHT_YELLOW)}")
+    print(f"    {colorize('I R I S', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('nicht bereit - Installation erforderlich', Colors.BRIGHT_YELLOW)}")
     print()
 
     # Check if Claude Code is running
@@ -1236,9 +1236,9 @@ def main():
         print()
         print()
         success_frames = [
-            f"    {colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.WHITE)} {colorize('Installation abgeschlossen...', Colors.WHITE)}",
-            f"    {colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('Starte JANUS...', Colors.BRIGHT_CYAN)}",
-            f"    {colorize('JANUS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)} {colorize('JANUS bereit!', Colors.BRIGHT_GREEN, bold=True)}",
+            f"    {colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.WHITE)} {colorize('Installation abgeschlossen...', Colors.WHITE)}",
+            f"    {colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_CYAN)} {colorize('Starte IRIS...', Colors.BRIGHT_CYAN)}",
+            f"    {colorize('IRIS', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)} {colorize('IRIS bereit!', Colors.BRIGHT_GREEN, bold=True)}",
         ]
 
         for frame in success_frames:
@@ -1250,7 +1250,7 @@ def main():
         print()
         print()
         print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
-        print(f"                {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)}")
+        print(f"                {colorize('I R I S', Colors.BRIGHT_WHITE, bold=True)}")
         print(f"                {colorize('( •‿• )', Colors.BRIGHT_GREEN, bold=True)}")
         print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
         print()
