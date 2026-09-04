@@ -1092,20 +1092,46 @@ def validate_config_json(config_path: Path) -> bool:
         return False
 
 
-def is_iris_installed() -> bool:
-    """Check if IRIS is already installed."""
+def is_iris_installed() -> tuple[bool, list[str]]:
+    """
+    Check if IRIS is fully installed.
+
+    Returns:
+        (all_installed, missing_components)
+    """
+    missing = []
+
+    # Check 1: iris-server command
+    try:
+        result = subprocess.run(
+            ["iris-server", "--help"],
+            capture_output=True,
+            timeout=5
+        )
+        if result.returncode != 0:
+            missing.append("iris-server command")
+    except:
+        missing.append("iris-server command")
+
+    # Check 2: MCP config
     try:
         config_path = get_claude_config_path()
         if not config_path.exists():
-            return False
+            missing.append("MCP config")
+        else:
+            with open(config_path) as f:
+                config = json.load(f)
+            if 'iris' not in config.get('mcpServers', {}):
+                missing.append("IRIS MCP entry")
+    except:
+        missing.append("MCP config")
 
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
+    # Check 3: Global CLAUDE.md
+    claude_md = Path.home() / ".claude" / "CLAUDE.md"
+    if not claude_md.exists() or "IRIS" not in claude_md.read_text():
+        missing.append("Global CLAUDE.md")
 
-        # Check if IRIS is registered in MCP servers
-        return 'iris' in config.get('mcpServers', {})
-    except Exception:
-        return False
+    return (len(missing) == 0, missing)
 
 
 def main():
@@ -1120,7 +1146,9 @@ def main():
     iris_root = get_iris_root()
 
     # Check if already installed
-    if is_iris_installed():
+    all_installed, missing = is_iris_installed()
+
+    if all_installed:
         print()
         print(f"    {colorize('═══════════════════════════════════════', Colors.BRIGHT_CYAN)}")
         print(f"                {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)}")
@@ -1133,6 +1161,18 @@ def main():
         print(f"       Start Claude Code and run {colorize('/startIris', Colors.BRIGHT_CYAN, bold=True)} to begin")
         print()
         return
+
+    # Partially installed - show what's missing
+    if missing:
+        print()
+        print(f"    {colorize('J A N U S', Colors.BRIGHT_WHITE, bold=True)} {colorize('( •_• )', Colors.BRIGHT_YELLOW)}")
+        print()
+        print(f"       {colorize('Missing components:', Colors.BRIGHT_YELLOW)}")
+        for component in missing:
+            print(f"         - {colorize(component, Colors.RED)}")
+        print()
+        print(f"       {colorize('Installing missing components...', Colors.BRIGHT_CYAN)}")
+        print()
 
     # Not installed - show setup needed
     print()
