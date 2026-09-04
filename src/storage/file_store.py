@@ -326,26 +326,9 @@ class OutputStore:
 
 
 # ═══════════════════════════════════════════════════════════
-# EMBEDDING STORE (Placeholder - Task #2)
+# NOTE: EmbeddingStore moved to storage/embedding_store.py
+# ponytail: deleted duplicate placeholder class
 # ═══════════════════════════════════════════════════════════
-
-class EmbeddingStore:
-    """
-    NumPy-based embedding storage.
-
-    Stores embeddings as .npy files in ~/.iris/embeddings/
-    """
-
-    def __init__(self, root: Optional[Path] = None):
-        """
-        Initialize embedding store.
-
-        Args:
-            root: Storage root (defaults to ~/.iris/)
-        """
-        self.root = root or get_iris_root()
-        self.embeddings_dir = self.root / "embeddings"
-        self.embeddings_dir.mkdir(exist_ok=True)
 
     # Implementation in Task #2
 
@@ -372,16 +355,15 @@ async def get_or_create_profile(user_id: UUID) -> Optional[UserProfile]:
 
 
 # ═══════════════════════════════════════════════════════════
-# DEFAULT STORE INSTANCES (Singleton Pattern)
+# DEFAULT STORE INSTANCES (ponytail: module-level, not singletons)
 # ═══════════════════════════════════════════════════════════
 
 _profile_store: Optional[ProfileStore] = None
 _output_store: Optional[OutputStore] = None
-_embedding_store: Optional[EmbeddingStore] = None
 
 
 def get_profile_store() -> ProfileStore:
-    """Get default ProfileStore instance (singleton)."""
+    """Get default ProfileStore instance."""
     global _profile_store
     if _profile_store is None:
         _profile_store = ProfileStore()
@@ -389,16 +371,11 @@ def get_profile_store() -> ProfileStore:
 
 
 def get_output_store() -> OutputStore:
-    """Get default OutputStore instance (singleton)."""
+    """Get default OutputStore instance."""
     global _output_store
     if _output_store is None:
         _output_store = OutputStore()
     return _output_store
 
 
-def get_embedding_store() -> EmbeddingStore:
-    """Get default EmbeddingStore instance (singleton)."""
-    global _embedding_store
-    if _embedding_store is None:
-        _embedding_store = EmbeddingStore()
-    return _embedding_store
+# ponytail: get_embedding_store() moved to storage/embedding_store.py

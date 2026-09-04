@@ -123,89 +123,41 @@ class BM25Index:
 
 
 # ═══════════════════════════════════════════════════════════
-# USER-SPECIFIC INDEX MANAGER
+# CACHED SEARCH (ponytail: no class, just dict + functions)
 # ═══════════════════════════════════════════════════════════
 
-class BM25Manager:
+_indices: dict[UUID, BM25Index] = {}
+
+
+def invalidate_bm25(user_id: UUID) -> None:
+    """Invalidate cached index when outputs change."""
+    _indices.pop(user_id, None)
+
+
+async def search_bm25(
+    user_id: UUID,
+    outputs: list[dict],
+    query: str,
+    top_k: int = 5
+) -> list[tuple[str, float]]:
     """
-    Manages BM25 indices per user.
+    Search user's outputs with BM25.
 
-    Caches indices in memory for fast subsequent searches.
+    Caches indices per user for performance.
+
+    Args:
+        user_id: User UUID
+        outputs: User's outputs
+        query: Search query
+        top_k: Number of results
+
+    Returns:
+        List of (output_id, score) tuples
     """
-
-    def __init__(self):
-        """Initialize manager with empty cache."""
-        self._indices: dict[UUID, BM25Index] = {}
-
-    async def get_index(self, user_id: UUID, outputs: list[dict]) -> BM25Index:
-        """
-        Get or build BM25 index for user.
-
-        Args:
-            user_id: User UUID
-            outputs: User's outputs (used if index not cached)
-
-        Returns:
-            BM25Index ready for searching
-        """
-        # Check cache
-        if user_id in self._indices:
-            return self._indices[user_id]
-
-        # Build new index
+    # Get or build index
+    if user_id not in _indices:
         index = BM25Index()
         index.build(outputs)
+        _indices[user_id] = index
 
-        # Cache it
-        self._indices[user_id] = index
-
-        return index
-
-    def invalidate(self, user_id: UUID) -> None:
-        """
-        Invalidate cached index for user.
-
-        Call this when new outputs are added.
-
-        Args:
-            user_id: User UUID
-        """
-        if user_id in self._indices:
-            del self._indices[user_id]
-
-    async def search(
-        self,
-        user_id: UUID,
-        outputs: list[dict],
-        query: str,
-        top_k: int = 5
-    ) -> list[tuple[str, float]]:
-        """
-        Search user's outputs with BM25.
-
-        Args:
-            user_id: User UUID
-            outputs: User's outputs
-            query: Search query
-            top_k: Number of results
-
-        Returns:
-            List of (output_id, score) tuples
-        """
-        index = await self.get_index(user_id, outputs)
-        return index.search(query, top_k=top_k)
-
-
-# ═══════════════════════════════════════════════════════════
-# SINGLETON INSTANCE
-# ═══════════════════════════════════════════════════════════
-
-_bm25_manager: Optional[BM25Manager] = None
-
-
-def get_bm25_manager() -> BM25Manager:
-    """Get default BM25Manager instance (singleton)."""
-    global _bm25_manager
-    if _bm25_manager is None:
-        _bm25_manager = BM25Manager()
-    return _bm25_manager
+    return _indices[user_id].search(query, top_k=top_k)

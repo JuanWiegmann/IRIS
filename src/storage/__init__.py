@@ -16,7 +16,8 @@ Design:
 - Easy to backup/migrate (just copy ~/.iris/)
 """
 
-from src.storage.file_store import ProfileStore, OutputStore, EmbeddingStore
+from src.storage.file_store import ProfileStore, OutputStore
+from src.storage.embedding_store import EmbeddingStore
 
 __all__ = [
     "ProfileStore",

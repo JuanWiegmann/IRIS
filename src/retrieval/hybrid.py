@@ -23,7 +23,7 @@ from typing import Optional
 from uuid import UUID
 import numpy as np
 
-from src.retrieval.bm25_search import get_bm25_manager
+from src.retrieval.bm25_search import search_bm25
 from src.retrieval.embeddings import embed_text
 from src.storage.file_store import get_output_store
 from src.storage.embedding_store import get_embedding_store
@@ -75,8 +75,7 @@ async def retrieve_relevant_outputs(
         return []
 
     # ═══ STEP 1: BM25 Keyword Search ═══
-    bm25_manager = get_bm25_manager()
-    bm25_results = await bm25_manager.search(
+    bm25_results = await search_bm25(
         user_id=user_id,
         outputs=outputs,
         query=query,

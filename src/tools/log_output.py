@@ -20,7 +20,7 @@ from mcp.types import Tool, TextContent
 from src.retrieval.embeddings import embed_text
 from src.storage.file_store import get_output_store
 from src.storage.embedding_store import get_embedding_store
-from src.retrieval.bm25_search import get_bm25_manager
+from src.retrieval.bm25_search import invalidate_bm25
 from src.profile import profile_exists
 from src.utils import iris_response
 
@@ -157,8 +157,7 @@ async def handle_log_output(arguments: dict, user_id: UUID) -> list[TextContent]
             embedding_status = f"⚠️ Embedding failed: {str(e)}"
 
         # ═══ STEP 4: Invalidate BM25 cache ═══
-        bm25_manager = get_bm25_manager()
-        bm25_manager.invalidate(user_id)
+        invalidate_bm25(user_id)
 
         # ═══ SUCCESS ═══
         word_count = output["metadata"]["word_count"]
