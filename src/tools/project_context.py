@@ -196,14 +196,13 @@ def get_recent_updates(
 # PROFILE INTEGRATION
 # ═══════════════════════════════════════════════════════════
 
-def update_profile_projects(user_id: str):
+async def update_profile_projects(user_id: str):
     """
     Update user profile's "current_projects" field based on recent activity.
 
     Looks at last 30 days of updates and updates profile accordingly.
     """
     from src.profile import get_or_create_profile
-    import asyncio
 
     # Get recent updates across all projects
     all_updates = load_project_updates(user_id)
@@ -227,15 +226,18 @@ def update_profile_projects(user_id: str):
             })
 
     # Load and update profile
-    profile = asyncio.run(get_or_create_profile(user_id))
+    profile = await get_or_create_profile(user_id)
     if profile:
         # Update current_projects field
         profile.current_projects = [p["name"] for p in active_projects]
 
-        # Save
+        # Save (convert UUID to string)
         profile_path = Path.home() / ".iris" / "data" / "profiles" / f"{profile.id}.json"
+        profile_data = profile.model_dump()
+        profile_data["id"] = str(profile_data["id"])  # UUID to string
+
         with open(profile_path, "w", encoding="utf-8") as f:
-            json.dump(profile.model_dump(), f, indent=2)
+            json.dump(profile_data, f, indent=2)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -354,7 +356,7 @@ async def handle_update_project_context(arguments: dict, user_id: str) -> list[T
     save_project_update(user_id, project, update, context, update_type)
 
     # Update profile's current_projects field
-    update_profile_projects(user_id)
+    await update_profile_projects(user_id)
 
     response = f"""**Project update logged**
 
