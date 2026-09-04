@@ -29,6 +29,7 @@ from src.profile import get_or_create_profile, format_profile_for_llm, profile_e
 from src.retrieval.hybrid import retrieve_relevant_outputs, format_outputs_for_llm
 from src.tools.log_output import get_log_output_tool, handle_log_output
 from src.tools.check_draft import get_check_draft_tool, handle_check_draft
+from src.tools.learn_feedback import get_learn_feedback_tool, handle_learn_feedback
 from src.tools.onboarding import (
     start_onboarding,
     store_answer,
@@ -270,7 +271,8 @@ async def list_tools() -> list[Tool]:
             }
         ),
         get_log_output_tool(),
-        get_check_draft_tool()
+        get_check_draft_tool(),
+        get_learn_feedback_tool()
     ]
 
 
@@ -299,6 +301,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     if name == "check_draft":
         user_id = get_user_id()
         return await handle_check_draft(arguments, user_id)
+
+    if name == "learn_from_feedback":
+        user_id = get_user_id()
+        return await handle_learn_feedback(arguments, user_id)
 
     # Onboarding tools
     # Learning: learning/07_user_profiles/README.md#gate-methodology

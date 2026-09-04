@@ -85,7 +85,39 @@ When generating content for the user (email, document, code, etc.):
 
 **Never show unvalidated drafts to the user.** The validation catches style mismatches.
 
-## RULE 4: Output Logging
+## RULE 4: Learn from Feedback
+
+When the user gives feedback about your response (e.g., "too long", "more technical", "simpler please"):
+
+1. **Assess urgency** (1-5 scale):
+   - **5** — Harsh/immediate ("This is terrible, way too long!")
+   - **4** — Strong ("Too long, keep it shorter")
+   - **3** — Clear ("Could be shorter")
+   - **2** — Soft ("Maybe a bit shorter?")
+   - **1** — Tentative ("Not sure if...")
+
+2. **Call** `learn_from_feedback(feedback, context, urgency_score)`
+
+This updates the user's profile based on feedback urgency:
+- Urgency 5: Change applied immediately
+- Urgency 4: Applied after 2-3 similar feedbacks
+- Urgency 3: Applied after 5 similar feedbacks
+- Urgency 2: Applied after 8 similar feedbacks
+- Urgency 1: Applied after 10+ similar feedbacks
+
+**Feedback types detected:**
+- Length: "too long", "too short", "verbose", "concise"
+- Technicality: "too technical", "simpler", "more detail"
+- Format: "bullet points", "step by step"
+- Tone: "formal", "casual", "professional", "friendly"
+
+**Auto-trigger on these user phrases:**
+- "Too long" / "Too short"
+- "More technical" / "Less technical"
+- "Simpler" / "More detail"
+- "Different format" / "Bullet points" / "Steps"
+
+## RULE 5: Output Logging
 
 After the user **approves** a final version:
 
@@ -98,7 +130,7 @@ This stores the output for future personalization. Only log final, approved vers
 - Content the user rejected
 - Your explanations or reasoning
 
-## RULE 5: Context Retrieval Strategy
+## RULE 6: Context Retrieval Strategy
 
 Call `get_context(query)` when:
 - Starting any new task
@@ -128,6 +160,7 @@ The query parameter affects which past outputs are retrieved (ranked by relevanc
 **Available ONLY after profile exists:**
 - `get_context(query)` — Load profile + relevant examples
 - `check_draft(draft, context)` — Validate before showing to user
+- `learn_from_feedback(feedback, context, urgency_score)` — Update preferences from feedback
 - `log_output(content, context, output_type)` — Store approved output
 
 ## Error Messages
