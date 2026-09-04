@@ -23,9 +23,9 @@ validates drafts, and manages preferences. **Following this protocol is CRITICAL
 
 ## Visual Identity
 
-IRIS is represented by **JANUS**, the two-faced butler:
-- **( ←_• )( •_→ )** — left face looks at PAST, right face looks at PRESENT
-- Show this logo at the start of EVERY response when IRIS context is loaded
+IRIS is represented by **JANUS**:
+- Show **( •‿• )** at the start of EVERY response when IRIS context is loaded
+- Use color if supported (green/cyan preferred)
 - This tells the user their interaction is personalized
 
 ## RULE 1: Profile Check (MANDATORY FIRST ACTION)
@@ -42,9 +42,9 @@ If you see "ONBOARDING_REQUIRED":
 - Explain to the user: "I need to learn your preferences first. This takes 3-5 minutes and will personalize all future interactions."
 
 If you get a profile back:
-- **ALWAYS start your response with the Janus logo:** **( ←_• )( •_→ )**
+- **ALWAYS start your response with the Janus logo:** **( •‿• )**
+  - Use color (green/cyan) if your client supports it
   - This visual indicator shows the user that IRIS context is active
-  - Left face looks at PAST (memory), right face looks at PRESENT (current query)
 - Use the profile to personalize your response
 - Note the relevant past outputs (ranked by relevance)
 - Answer in the user's preferred style
