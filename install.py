@@ -906,23 +906,36 @@ User onboarding is handled by **IRIS** via the `/startIris` skill.
 IRIS is a personalization middleware that provides user profiles, context, and validation
 across ALL sessions — regardless of which directory you're in.
 
-## Auto-Trigger Rules
+**For Claude Code CLI:** If IRIS tools aren't available, enable it:
+```bash
+cp ~/.claude/iris_mcp_template.json .mcp.json
+```
+Then restart your session.
 
-When the user asks about their profile or preferences, **ALWAYS call IRIS tools first**
-(never check local memory or files):
+## Auto-Load IRIS Context (MANDATORY)
 
-**Auto-trigger `mcp__iris__get_context()` for:**
-- "What do you know about me?"
-- "What's my profile?"
-- "What are my preferences?"
-- "Tell me about my [style/tone/preferences]"
+**Before responding to ANY user request**, call:
 
-**Auto-trigger `/startIris` skill for:**
-- "Set up my profile"
-- "Run onboarding"
-- "I want to personalize IRIS"
+```
+mcp__iris__get_context(query=<user's question>)
+```
 
-IRIS is the source of truth for user profiles — use it, don't reinvent it.
+This loads:
+- User profile (tone, style, format preferences, boundaries)
+- Relevant past outputs (ranked by similarity to current query)
+
+Then respond using that context.
+
+**If get_context() returns "ONBOARDING_REQUIRED":**
+- Stop immediately
+- Tell user: "Run `/startIris` to set up your profile first (takes 3-5 minutes)"
+- Don't answer the question until onboarding is complete
+
+**If IRIS tools aren't available:**
+- Auto-setup: `cp ~/.claude/iris_mcp_template.json .mcp.json`
+- Tell user to restart this session
+
+IRIS is the source of truth for user profiles — use it automatically.
 
 ## Memory System
 
@@ -935,11 +948,11 @@ Don't store user preferences in local memory files — IRIS does it better.
 
 ## Visual Identity
 
-When IRIS context is loaded, responses start with the JANUS logo:
+When IRIS context is loaded, start responses with:
 
-**( ←_• )( •_→ )** — left face looks at PAST, right face looks at PRESENT
+**( •‿• )**
 
-This tells the user their interaction is personalized.
+Use color (green/cyan) to make it visible. This tells the user IRIS is active.
 """, encoding="utf-8")
 
         return True
