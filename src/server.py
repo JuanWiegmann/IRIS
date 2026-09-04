@@ -43,6 +43,18 @@ from src.tools.project_context import (
     handle_query_project_context,
     handle_get_project_signals
 )
+from src.orchestration.fresh_context_validation import (
+    get_fresh_context_validation_tool,
+    handle_validate_fresh_context
+)
+from src.memory import (
+    get_recent_messages,
+    format_stm_for_llm,
+    get_summaries,
+    format_summaries_for_llm,
+    get_ltm_context,
+    format_ltm_for_llm
+)
 from src.tools.onboarding import (
     start_onboarding,
     store_answer,
@@ -289,7 +301,8 @@ async def list_tools() -> list[Tool]:
         get_apply_feedback_change_tool(),
         get_update_project_context_tool(),
         get_query_project_context_tool(),
-        get_project_detection_signals_tool()
+        get_project_detection_signals_tool(),
+        get_fresh_context_validation_tool()
     ]
 
 
@@ -336,6 +349,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 
     if name == "get_project_signals":
         return await handle_get_project_signals(arguments)
+
+    if name == "validate_fresh_context":
+        user_id = get_user_id()
+        return await handle_validate_fresh_context(arguments, user_id)
 
     # Onboarding tools
     # Learning: learning/07_user_profiles/README.md#gate-methodology
@@ -417,17 +434,50 @@ async def handle_get_context(arguments: dict) -> list[TextContent]:
         # No outputs yet, or retrieval failed
         outputs_text = "*(No past outputs stored yet)*"
 
+    # ═══ MEMORY TIERS (Westhaeusser et al. 2024) ═══
+
+    # STM: Recent conversation
+    try:
+        stm_messages = get_recent_messages(user_id, limit=10)
+        stm_text = format_stm_for_llm(stm_messages)
+    except Exception:
+        stm_text = "*(No recent conversation)*"
+
+    # Summaries: Conversation history
+    try:
+        summaries = get_summaries(user_id, limit=3)
+        summaries_text = format_summaries_for_llm(summaries)
+    except Exception:
+        summaries_text = "*(No conversation history)*"
+
+    # LTM: Project memory (reuses project_context)
+    try:
+        ltm_updates = await get_ltm_context(user_id, days=30)
+        ltm_text = format_ltm_for_llm(ltm_updates)
+    except Exception:
+        ltm_text = "*(No project memory)*"
+
     # Build full context response
     response = f"""# Personalized Context for: "{query}"
 
 {profile_text}
 
+## Recent Conversation (STM)
+{stm_text}
+
 ## Relevant Past Outputs
 {outputs_text}
+
+## Conversation History (Summaries)
+{summaries_text}
+
+## Project Memory (LTM)
+{ltm_text}
 
 ---
 *Profile: ~/.iris/data/profiles/{profile.id}.json*
 *Retrieval: Hybrid BM25 + vector similarity (Wu et al. 2024)*
+*Memory: Multi-tiered (Westhaeusser et al. 2024)*
 """
 
     return [
