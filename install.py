@@ -628,6 +628,39 @@ def register_mcp_json():
         return False
 
 
+def create_mcp_template():
+    """
+    Create reusable MCP template for CLI projects.
+
+    Returns:
+        True if created successfully, False otherwise
+    """
+    try:
+        iris_root = get_iris_root()
+        template_path = Path.home() / ".claude" / "iris_mcp_template.json"
+
+        template = {
+            "$schema": "https://github.com/modelcontextprotocol/servers/raw/main/schemas/mcp.schema.json",
+            "mcpServers": {
+                "iris": {
+                    "command": sys.executable,
+                    "args": ["-m", "src.server"],
+                    "cwd": str(iris_root),
+                    "env": {
+                        "IRIS_LOG_LEVEL": "INFO"
+                    }
+                }
+            }
+        }
+
+        with open(template_path, "w", encoding="utf-8") as f:
+            json.dump(template, f, indent=2)
+
+        return True, template_path
+    except Exception:
+        return False, None
+
+
 def setup_memory_redirects():
     """
     Create GLOBAL memory redirect files so Claude Code uses IRIS from any session.
@@ -986,6 +1019,14 @@ def main():
         else:
             print_skip("Memory integration skipped")
 
+        # Create MCP template for CLI projects
+        print_progress("Creating MCP template")
+        template_created, template_path = create_mcp_template()
+        if template_created:
+            print_done("MCP template created")
+        else:
+            print_skip("MCP template skipped")
+
         # Validate configuration
         if not validate_config_json(config_path):
             raise Exception("Configuration validation failed")
@@ -1030,7 +1071,23 @@ def main():
         print(f"       {colorize('Installed:', Colors.WHITE)} {', '.join(installed)}")
         print(f"       {colorize('Location:', Colors.WHITE)} {colorize(str(iris_root), Colors.DIM + Colors.WHITE)}")
         print()
-        print(f"       {colorize('Next:', Colors.BRIGHT_YELLOW, bold=True)} Start Claude Code and run {colorize('/startIris', Colors.BRIGHT_CYAN, bold=True)}")
+
+        # Desktop App instructions
+        print(f"       {colorize('Claude Desktop App:', Colors.BRIGHT_YELLOW, bold=True)}")
+        print(f"         1. {colorize('Restart Claude Desktop', Colors.BRIGHT_CYAN)} (closes all sessions)")
+        print(f"         2. IRIS will auto-load in all new sessions")
+        print()
+
+        # CLI instructions
+        print(f"       {colorize('Claude Code CLI:', Colors.BRIGHT_YELLOW, bold=True)}")
+        print(f"         Copy template to your project:")
+        if template_created and template_path:
+            print(f"         {colorize('cp', Colors.DIM + Colors.WHITE)} {colorize(str(template_path), Colors.BRIGHT_CYAN)} {colorize('<project>/.mcp.json', Colors.DIM + Colors.WHITE)}")
+        print()
+
+        # Onboarding
+        print(f"       {colorize('First time?', Colors.BRIGHT_YELLOW, bold=True)} Run {colorize('/startIris', Colors.BRIGHT_CYAN, bold=True)} to create your profile")
+
         if not api_key:
             print(f"       {colorize('Note:', Colors.DIM + Colors.YELLOW)} Skipped OpenAI key (add later for semantic search)")
         print()
