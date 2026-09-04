@@ -731,7 +731,10 @@ if __name__ == "__main__":
             settings["hooks"] = {}
 
         if "SessionStart" not in settings["hooks"]:
-            settings["hooks"]["SessionStart"] = []
+            settings["hooks"]["SessionStart"] = {"hooks": []}
+
+        if "hooks" not in settings["hooks"]["SessionStart"]:
+            settings["hooks"]["SessionStart"]["hooks"] = []
 
         # Add hook if not already present (check by command path)
         hook_entry = {
@@ -740,14 +743,15 @@ if __name__ == "__main__":
         }
 
         # Check if hook already registered
+        hooks_list = settings["hooks"]["SessionStart"]["hooks"]
         already_registered = any(
             h.get("args", [None])[0] == str(hook_path)
-            for h in settings["hooks"]["SessionStart"]
+            for h in hooks_list
             if isinstance(h, dict)
         )
 
         if not already_registered:
-            settings["hooks"]["SessionStart"].append(hook_entry)
+            settings["hooks"]["SessionStart"]["hooks"].append(hook_entry)
 
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2)
