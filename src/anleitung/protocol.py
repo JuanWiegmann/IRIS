@@ -85,37 +85,69 @@ When generating content for the user (email, document, code, etc.):
 
 **Never show unvalidated drafts to the user.** The validation catches style mismatches.
 
-## RULE 4: Learn from Feedback
+## RULE 4: Continuous Learning from Feedback
 
-When the user gives feedback about your response (e.g., "too long", "more technical", "simpler please"):
+**CRITICAL: Check EVERY user message for feedback signals.**
 
-**Call** `learn_from_feedback(feedback, context)`
+### Automatic Feedback Detection
 
-Pass the user's exact feedback — IRIS automatically analyzes urgency from tone:
-- **Harsh** ("This is terrible!", "!!!", expletives) → Change immediately
-- **Strong command** ("Keep it shorter", "Don't", "Must") → Fast rollout (2-3 feedbacks)
-- **Clear statement** ("Is too long", "Could be shorter") → Medium rollout (5 feedbacks)
-- **Soft suggestion** ("Maybe a bit", "Could") → Slow rollout (8 feedbacks)
-- **Tentative** ("Not sure?", "Wondering if") → Very slow rollout (10+ feedbacks)
+**At the start of analyzing ANY user message:**
 
-**You don't assess urgency — IRIS does it automatically from the feedback text.**
+1. **Call** `get_feedback_categories()`
+   - This returns categories, detection signals, and update rules
+   - Do this BEFORE generating your response
 
-This updates the user's profile with urgency-based gradual rollout:
-- Harsh feedback → applied immediately
-- Multiple similar feedbacks → pattern detected → profile updated
-- Protects against one-off comments that don't reflect true preferences
+2. **Analyze the user's message:**
+   - Does it contain feedback signals? (check detection patterns from categories)
+   - If yes → assess sentiment (harsh/strong/soft/tentative)
+   - Check if threshold met (based on feedback history + sentiment)
 
-**Feedback types detected:**
-- Length: "too long", "too short", "verbose", "concise"
-- Technicality: "too technical", "simpler", "more detail"
-- Format: "bullet points", "step by step"
-- Tone: "formal", "casual", "professional", "friendly"
+3. **If threshold met:**
+   - Call `apply_feedback_change(category, change_type, user_feedback, reasoning)`
+   - Profile updates automatically
 
-**Auto-trigger on these user phrases:**
-- "Too long" / "Too short"
-- "More technical" / "Less technical"
-- "Simpler" / "More detail"
-- "Different format" / "Bullet points" / "Steps"
+4. **Mention change at START of your response:**
+   - "I've updated your profile to prefer shorter responses based on your feedback."
+   - Then answer their question normally
+
+### Feedback Categories
+
+IRIS provides these categories:
+- **response_length** — User wants shorter/longer responses
+- **technical_depth** — User wants more/less technical detail
+- **format_preference** — User prefers bullets/steps/paragraphs
+- **tone** — User wants professional/casual/technical tone
+- **proactivity** — User wants more/less proactive suggestions
+- **explanation_style** — User wants more/less context
+
+### Detection Examples
+
+**Explicit feedback:**
+- "Too long" → response_length, make_shorter
+- "More technical" → technical_depth, more_technical
+- "Bullet points please" → format_preference, bullet_points
+
+**Implicit feedback:**
+- User reformats your response → format_preference
+- User asks for definitions → technical_depth (maybe less_technical)
+- User says "I know that" → explanation_style (minimal_context)
+
+### Decision Making
+
+You (the LLM) decide:
+1. Is this feedback? (using IRIS categories as guide)
+2. How strong is the sentiment? (you're better at this than regex)
+3. Is threshold met? (check change_types threshold from categories)
+4. Should I update now? (yes if threshold met)
+
+IRIS provides structure, you provide intelligence.
+
+### Important
+
+- Check EVERY message (not just explicit feedback)
+- Mention changes at START of response (transparency)
+- Be conservative with changes (protect against one-off comments)
+- Use your judgment + IRIS categories together
 
 ## RULE 5: Output Logging
 
