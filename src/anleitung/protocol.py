@@ -89,21 +89,21 @@ When generating content for the user (email, document, code, etc.):
 
 When the user gives feedback about your response (e.g., "too long", "more technical", "simpler please"):
 
-1. **Assess urgency** (1-5 scale):
-   - **5** — Harsh/immediate ("This is terrible, way too long!")
-   - **4** — Strong ("Too long, keep it shorter")
-   - **3** — Clear ("Could be shorter")
-   - **2** — Soft ("Maybe a bit shorter?")
-   - **1** — Tentative ("Not sure if...")
+**Call** `learn_from_feedback(feedback, context)`
 
-2. **Call** `learn_from_feedback(feedback, context, urgency_score)`
+Pass the user's exact feedback — IRIS automatically analyzes urgency from tone:
+- **Harsh** ("This is terrible!", "!!!", expletives) → Change immediately
+- **Strong command** ("Keep it shorter", "Don't", "Must") → Fast rollout (2-3 feedbacks)
+- **Clear statement** ("Is too long", "Could be shorter") → Medium rollout (5 feedbacks)
+- **Soft suggestion** ("Maybe a bit", "Could") → Slow rollout (8 feedbacks)
+- **Tentative** ("Not sure?", "Wondering if") → Very slow rollout (10+ feedbacks)
 
-This updates the user's profile based on feedback urgency:
-- Urgency 5: Change applied immediately
-- Urgency 4: Applied after 2-3 similar feedbacks
-- Urgency 3: Applied after 5 similar feedbacks
-- Urgency 2: Applied after 8 similar feedbacks
-- Urgency 1: Applied after 10+ similar feedbacks
+**You don't assess urgency — IRIS does it automatically from the feedback text.**
+
+This updates the user's profile with urgency-based gradual rollout:
+- Harsh feedback → applied immediately
+- Multiple similar feedbacks → pattern detected → profile updated
+- Protects against one-off comments that don't reflect true preferences
 
 **Feedback types detected:**
 - Length: "too long", "too short", "verbose", "concise"

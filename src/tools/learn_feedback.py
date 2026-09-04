@@ -26,6 +26,66 @@ from src.utils import get_user_id, iris_response
 
 
 # ═══════════════════════════════════════════════════════════
+# URGENCY ANALYSIS
+# ═══════════════════════════════════════════════════════════
+
+def analyze_urgency(feedback: str) -> int:
+    """
+    Analyze urgency from user feedback tone.
+
+    Urgency scale:
+    - 5: Harsh/immediate (expletives, "terrible", "awful", multiple exclamation marks)
+    - 4: Strong (direct command, "keep it", "don't", no softeners)
+    - 3: Clear (statement of fact, "is too X", no questions)
+    - 2: Soft (suggestion, "could", "maybe", "a bit")
+    - 1: Tentative (question, "not sure", "might")
+
+    Args:
+        feedback: User's feedback text
+
+    Returns:
+        Urgency score 1-5
+    """
+    feedback_lower = feedback.lower()
+
+    # Urgency 5: Harsh/immediate
+    harsh_markers = [
+        "terrible", "awful", "horrible", "useless", "waste",
+        "!!!", "stop", "never", "always", "constantly"
+    ]
+    if any(marker in feedback_lower for marker in harsh_markers):
+        return 5
+
+    # Urgency 4: Strong command
+    strong_markers = [
+        "keep it", "make it", "don't", "do not", "must", "need to"
+    ]
+    if any(marker in feedback_lower for marker in strong_markers):
+        # But check if softened
+        softeners = ["maybe", "could", "might", "perhaps", "possibly"]
+        if not any(soft in feedback_lower for soft in softeners):
+            return 4
+
+    # Urgency 1: Tentative/question
+    tentative_markers = [
+        "not sure", "maybe", "perhaps", "might", "could be",
+        "?", "wondering if", "thinking"
+    ]
+    if any(marker in feedback_lower for marker in tentative_markers):
+        return 1
+
+    # Urgency 2: Soft suggestion
+    soft_markers = [
+        "a bit", "a little", "somewhat", "slightly", "could", "would be nice"
+    ]
+    if any(marker in feedback_lower for marker in soft_markers):
+        return 2
+
+    # Urgency 3: Clear statement (default)
+    return 3
+
+
+# ═══════════════════════════════════════════════════════════
 # FEEDBACK ANALYSIS
 # ═══════════════════════════════════════════════════════════
 
@@ -41,11 +101,15 @@ def analyze_feedback(feedback: str, context: str) -> Dict[str, Any]:
         {
             "preference_type": "response_length" | "technicality" | "format" | "tone",
             "direction": "increase" | "decrease",
-            "target_value": str (what to change to)
+            "target_value": str (what to change to),
+            "urgency": int (1-5, determined by IRIS)
         }
     """
     # Simple keyword-based analysis (can be enhanced with LLM)
     feedback_lower = feedback.lower()
+
+    # Analyze urgency first
+    urgency = analyze_urgency(feedback)
 
     # Length feedback
     if any(word in feedback_lower for word in ["long", "short", "brief", "concise", "verbose"]):
@@ -53,13 +117,15 @@ def analyze_feedback(feedback: str, context: str) -> Dict[str, Any]:
             return {
                 "preference_type": "response_length",
                 "direction": "decrease",
-                "target_value": "shorter"
+                "target_value": "shorter",
+                "urgency": urgency
             }
         elif any(word in feedback_lower for word in ["too short", "more detail", "elaborate"]):
             return {
                 "preference_type": "response_length",
                 "direction": "increase",
-                "target_value": "longer"
+                "target_value": "longer",
+                "urgency": urgency
             }
 
     # Technical depth feedback
@@ -68,13 +134,15 @@ def analyze_feedback(feedback: str, context: str) -> Dict[str, Any]:
             return {
                 "preference_type": "technicality",
                 "direction": "decrease",
-                "target_value": "less_technical"
+                "target_value": "less_technical",
+                "urgency": urgency
             }
         elif any(word in feedback_lower for word in ["more technical", "details", "deeper"]):
             return {
                 "preference_type": "technicality",
                 "direction": "increase",
-                "target_value": "more_technical"
+                "target_value": "more_technical",
+                "urgency": urgency
             }
 
     # Format feedback
@@ -82,7 +150,8 @@ def analyze_feedback(feedback: str, context: str) -> Dict[str, Any]:
         return {
             "preference_type": "format",
             "direction": "set",
-            "target_value": "step_by_step" if "step" in feedback_lower else "bullet_points"
+            "target_value": "step_by_step" if "step" in feedback_lower else "bullet_points",
+            "urgency": urgency
         }
 
     # Tone feedback
@@ -91,19 +160,22 @@ def analyze_feedback(feedback: str, context: str) -> Dict[str, Any]:
             return {
                 "preference_type": "tone",
                 "direction": "set",
-                "target_value": "professional"
+                "target_value": "professional",
+                "urgency": urgency
             }
         elif "casual" in feedback_lower or "friendly" in feedback_lower:
             return {
                 "preference_type": "tone",
                 "direction": "set",
-                "target_value": "casual"
+                "target_value": "casual",
+                "urgency": urgency
             }
 
     return {
         "preference_type": "unknown",
         "direction": "unknown",
-        "target_value": feedback  # Store raw feedback for later analysis
+        "target_value": feedback,  # Store raw feedback for later analysis
+        "urgency": urgency
     }
 
 
@@ -243,32 +315,28 @@ def get_learn_feedback_tool() -> Tool:
             "Use when the user gives feedback about your responses "
             "(e.g., 'too long', 'more technical', 'simpler please'). "
             "\n\n"
-            "Urgency scale:\n"
-            "- 5: Harsh/immediate (change now)\n"
-            "- 4: Strong (apply after 2-3 similar feedbacks)\n"
-            "- 3: Clear (apply after 5 similar feedbacks)\n"
-            "- 2: Soft (apply after 8 similar feedbacks)\n"
-            "- 1: Tentative (apply after 10+ similar feedbacks)"
+            "IRIS automatically analyzes urgency from the feedback tone:\n"
+            "- Harsh/immediate (expletives, '!!!', 'terrible') → Change now\n"
+            "- Strong command ('keep it', 'don't', 'must') → Fast rollout\n"
+            "- Clear statement ('is too X') → Medium rollout\n"
+            "- Soft suggestion ('maybe', 'a bit') → Slow rollout\n"
+            "- Tentative ('not sure', '?') → Very slow rollout\n"
+            "\n\n"
+            "You don't need to assess urgency — just pass the feedback as-is."
         ),
         inputSchema={
             "type": "object",
             "properties": {
                 "feedback": {
                     "type": "string",
-                    "description": "What the user said (e.g., 'too long', 'more technical')"
+                    "description": "Exact user feedback (e.g., 'This is way too long!', 'Could be a bit shorter')"
                 },
                 "context": {
                     "type": "string",
                     "description": "What was the task/query that prompted this feedback"
-                },
-                "urgency_score": {
-                    "type": "integer",
-                    "description": "1-5 scale: how strongly the user feels about this change",
-                    "minimum": 1,
-                    "maximum": 5
                 }
             },
-            "required": ["feedback", "context", "urgency_score"]
+            "required": ["feedback", "context"]
         }
     )
 
@@ -282,7 +350,7 @@ async def handle_learn_feedback(arguments: dict, user_id: str) -> list:
     Handle learn_from_feedback tool call.
 
     Args:
-        arguments: {feedback, context, urgency_score}
+        arguments: {feedback, context}
         user_id: User identifier
 
     Returns:
@@ -292,10 +360,10 @@ async def handle_learn_feedback(arguments: dict, user_id: str) -> list:
 
     feedback = arguments.get("feedback", "")
     context = arguments.get("context", "")
-    urgency = arguments.get("urgency_score", 3)
 
-    # Analyze feedback
+    # Analyze feedback (IRIS determines urgency from tone)
     analysis = analyze_feedback(feedback, context)
+    urgency = analysis.get("urgency", 3)
 
     # Store feedback entry
     entry = {
