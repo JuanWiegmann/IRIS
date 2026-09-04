@@ -1,11 +1,11 @@
 """
-KIM Logger
+IRIS Logger
 ==========
 
-Detailed logging for all KIM operations.
+Detailed logging for all IRIS operations.
 
 Logs to:
-- ~/.kim/logs/kim_server.log (rotating file)
+- ~/.iris/logs/iris_server.log (rotating file)
 - stderr (console, for MCP client)
 
 Log levels:
@@ -34,16 +34,16 @@ import os
 # ═══════════════════════════════════════════════════════════
 
 def get_log_dir() -> Path:
-    """Get log directory (~/.kim/logs/)."""
-    kim_root = Path(os.getenv("KIM_DATA_DIR", Path.home() / ".kim"))
-    log_dir = kim_root / "logs"
+    """Get log directory (~/.iris/logs/)."""
+    iris_root = Path(os.getenv("IRIS_DATA_DIR", Path.home() / ".iris"))
+    log_dir = iris_root / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
 
 def get_log_level() -> int:
     """Get log level from environment."""
-    level_str = os.getenv("KIM_LOG_LEVEL", "INFO").upper()
+    level_str = os.getenv("IRIS_LOG_LEVEL", "INFO").upper()
     return getattr(logging, level_str, logging.INFO)
 
 
@@ -51,7 +51,7 @@ def get_log_level() -> int:
 # CUSTOM FORMATTER
 # ═══════════════════════════════════════════════════════════
 
-class KIMFormatter(logging.Formatter):
+class IRISFormatter(logging.Formatter):
     """
     Custom formatter with color support and structured output.
 
@@ -94,18 +94,18 @@ _loggers: dict[str, logging.Logger] = {}
 
 def setup_logging():
     """
-    Set up logging for KIM.
+    Set up logging for IRIS.
 
     Creates:
-    - File handler: ~/.kim/logs/kim_server.log (rotating, 10MB, 5 backups)
+    - File handler: ~/.iris/logs/iris_server.log (rotating, 10MB, 5 backups)
     - Console handler: stderr (for MCP client visibility)
     """
     log_dir = get_log_dir()
-    log_file = log_dir / "kim_server.log"
+    log_file = log_dir / "iris_server.log"
     log_level = get_log_level()
 
     # Root logger
-    root_logger = logging.getLogger("kim")
+    root_logger = logging.getLogger("iris")
     root_logger.setLevel(log_level)
 
     # Remove existing handlers
@@ -119,21 +119,14 @@ def setup_logging():
         encoding="utf-8"
     )
     file_handler.setLevel(logging.DEBUG)  # Always DEBUG in file
-    file_handler.setFormatter(KIMFormatter(use_color=False))
+    file_handler.setFormatter(IRISFormatter(use_color=False))
     root_logger.addHandler(file_handler)
 
     # Console handler (for MCP client)
     console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setLevel(log_level)
-    console_handler.setFormatter(KIMFormatter(use_color=True))
+    console_handler.setFormatter(IRISFormatter(use_color=True))
     root_logger.addHandler(console_handler)
-
-    # Log startup
-    root_logger.info("=" * 60)
-    root_logger.info("KIM MCP Server Starting")
-    root_logger.info(f"Log level: {logging.getLevelName(log_level)}")
-    root_logger.info(f"Log file: {log_file}")
-    root_logger.info("=" * 60)
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -152,7 +145,7 @@ def get_logger(name: str) -> logging.Logger:
         logger.debug(f"BM25 scores: {scores}")
     """
     if name not in _loggers:
-        _loggers[name] = logging.getLogger(f"kim.{name}")
+        _loggers[name] = logging.getLogger(f"iris.{name}")
 
     return _loggers[name]
 

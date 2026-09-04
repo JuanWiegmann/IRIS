@@ -2,10 +2,14 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
 [project]
-name = "kim"
+name = "iris-mcp"
 version = "0.1.0"
-description = "KIM — Personalized AI Communication Harness (PoC)"
+description = "IRIS — MCP Personalization Middleware"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.0",
@@ -18,6 +22,9 @@ dependencies = [
     "rank-bm25>=0.2",
     "psutil>=5.9",
 ]
+
+[project.scripts]
+iris-server = "src.server:main"
 
 [project.optional-dependencies]
 dev = [

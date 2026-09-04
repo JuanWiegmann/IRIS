@@ -483,7 +483,7 @@ async def handle_complete_onboarding(arguments: dict) -> list[TextContent]:
 # SERVER ENTRY POINT
 # ═══════════════════════════════════════════════════════════
 
-async def main():
+async def run_server():
     """
     Start the MCP server via stdio transport.
 
@@ -498,5 +498,10 @@ async def main():
         )
 
 
+def main():
+    """Console script entry point (synchronous)."""
+    asyncio.run(run_server())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -600,24 +600,31 @@ def install_mendix_cli():
 
 
 def register_mcp_json():
-    """Register IRIS in .mcp.json for Claude Code CLI."""
+    """Register IRIS in global .mcp.json for Claude Code CLI."""
     try:
-        iris_root = get_iris_root()
-        mcp_json_path = iris_root / ".mcp.json"
+        # Global CLI config (works for all sessions)
+        mcp_json_path = Path.home() / ".claude" / "mcp.json"
 
         mcp_config = {
             "$schema": "https://github.com/modelcontextprotocol/servers/raw/main/schemas/mcp.schema.json",
             "mcpServers": {
                 "iris": {
-                    "command": sys.executable,
-                    "args": ["-m", "src.server"],
-                    "cwd": str(iris_root),
+                    "command": "iris-server",
                     "env": {
                         "IRIS_LOG_LEVEL": "INFO"
                     }
                 }
             }
         }
+
+        # Merge with existing config if present
+        if mcp_json_path.exists():
+            with open(mcp_json_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            if "mcpServers" not in existing:
+                existing["mcpServers"] = {}
+            existing["mcpServers"]["iris"] = mcp_config["mcpServers"]["iris"]
+            mcp_config = existing
 
         with open(mcp_json_path, "w", encoding="utf-8") as f:
             json.dump(mcp_config, f, indent=2)
@@ -636,16 +643,13 @@ def create_mcp_template():
         True if created successfully, False otherwise
     """
     try:
-        iris_root = get_iris_root()
         template_path = Path.home() / ".claude" / "iris_mcp_template.json"
 
         template = {
             "$schema": "https://github.com/modelcontextprotocol/servers/raw/main/schemas/mcp.schema.json",
             "mcpServers": {
                 "iris": {
-                    "command": sys.executable,
-                    "args": ["-m", "src.server"],
-                    "cwd": str(iris_root),
+                    "command": "iris-server",
                     "env": {
                         "IRIS_LOG_LEVEL": "INFO"
                     }
@@ -986,11 +990,9 @@ def register_all_mcp_servers(api_key: str = None, ponytail_dir: Path = None):
         if "mcpServers" not in config:
             config["mcpServers"] = {}
 
-        # Register IRIS (always update cwd to current location)
+        # Register IRIS (portable - works on any machine)
         iris_config = {
-            "command": sys.executable,
-            "args": ["-m", "src.server"],
-            "cwd": str(iris_root),
+            "command": "iris-server",
             "env": {
                 "IRIS_LOG_LEVEL": "INFO"
             }
@@ -1143,13 +1145,6 @@ def main():
         else:
             print_skip("MCP template skipped")
 
-        # Install global session-start hook
-        print_progress("Installing auto-enable hook")
-        if install_session_start_hook():
-            print_done("Auto-enable hook installed")
-        else:
-            print_skip("Auto-enable hook skipped")
-
         # Validate configuration
         if not validate_config_json(config_path):
             raise Exception("Configuration validation failed")
@@ -1203,9 +1198,8 @@ def main():
 
         # CLI instructions
         print(f"       {colorize('Claude Code CLI:', Colors.BRIGHT_YELLOW, bold=True)}")
-        print(f"         Copy template to your project:")
-        if template_created and template_path:
-            print(f"         {colorize('cp', Colors.DIM + Colors.WHITE)} {colorize(str(template_path), Colors.BRIGHT_CYAN)} {colorize('<project>/.mcp.json', Colors.DIM + Colors.WHITE)}")
+        print(f"         IRIS auto-loads in all sessions (global config)")
+        print(f"         Just start Claude Code in any folder")
         print()
 
         # Onboarding
