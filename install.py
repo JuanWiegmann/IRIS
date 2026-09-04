@@ -733,9 +733,20 @@ if __name__ == "__main__":
         if "SessionStart" not in settings["hooks"]:
             settings["hooks"]["SessionStart"] = []
 
-        # Add hook if not already present
-        hook_entry = str(hook_path)
-        if hook_entry not in settings["hooks"]["SessionStart"]:
+        # Add hook if not already present (check by command path)
+        hook_entry = {
+            "command": "python",
+            "args": [str(hook_path)]
+        }
+
+        # Check if hook already registered
+        already_registered = any(
+            h.get("args", [None])[0] == str(hook_path)
+            for h in settings["hooks"]["SessionStart"]
+            if isinstance(h, dict)
+        )
+
+        if not already_registered:
             settings["hooks"]["SessionStart"].append(hook_entry)
 
         with open(settings_path, "w", encoding="utf-8") as f:
