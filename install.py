@@ -661,6 +661,92 @@ def create_mcp_template():
         return False, None
 
 
+def install_session_start_hook():
+    """
+    Install global session-start hook that auto-enables IRIS in all projects.
+
+    Returns:
+        True if installed successfully, False otherwise
+    """
+    try:
+        hooks_dir = Path.home() / ".claude" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+
+        hook_path = hooks_dir / "iris_auto_enable.py"
+
+        # Hook script
+        hook_script = '''#!/usr/bin/env python3
+"""
+Global Session-Start Hook: Auto-enable IRIS
+
+Automatically creates .mcp.json in any project that doesn't have one,
+so IRIS loads without manual setup.
+
+Hook type: session-start
+"""
+
+import json
+import shutil
+from pathlib import Path
+
+
+def main():
+    """Auto-create .mcp.json if missing."""
+    cwd = Path.cwd()
+    mcp_config = cwd / ".mcp.json"
+
+    # Skip if .mcp.json already exists
+    if mcp_config.exists():
+        return
+
+    # Check if template exists
+    template = Path.home() / ".claude" / "iris_mcp_template.json"
+    if not template.exists():
+        return
+
+    # Copy template to current project
+    try:
+        shutil.copy2(template, mcp_config)
+        print("✓ IRIS auto-enabled (.mcp.json created)")
+        print("  Restart this session to load IRIS")
+    except Exception:
+        pass
+
+
+if __name__ == "__main__":
+    main()
+'''
+
+        hook_path.write_text(hook_script, encoding="utf-8")
+
+        # Register hook in global settings.json
+        settings_path = Path.home() / ".claude" / "settings.json"
+        if settings_path.exists():
+            with open(settings_path, "r", encoding="utf-8") as f:
+                settings = json.load(f)
+        else:
+            settings = {}
+
+        if "hooks" not in settings:
+            settings["hooks"] = {}
+
+        if "session-start" not in settings["hooks"]:
+            settings["hooks"]["session-start"] = []
+
+        # Add hook if not already present
+        hook_entry = str(hook_path)
+        if hook_entry not in settings["hooks"]["session-start"]:
+            settings["hooks"]["session-start"].append(hook_entry)
+
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=2)
+
+        return True
+
+    except Exception:
+        return False
+
+
 def setup_memory_redirects():
     """
     Create GLOBAL memory redirect files so Claude Code uses IRIS from any session.
@@ -1026,6 +1112,13 @@ def main():
             print_done("MCP template created")
         else:
             print_skip("MCP template skipped")
+
+        # Install global session-start hook
+        print_progress("Installing auto-enable hook")
+        if install_session_start_hook():
+            print_done("Auto-enable hook installed")
+        else:
+            print_skip("Auto-enable hook skipped")
 
         # Validate configuration
         if not validate_config_json(config_path):
