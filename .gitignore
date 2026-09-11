@@ -24,3 +24,11 @@ data/
 
 # Claude Code (local settings stay local)
 .claude/settings.local.json
+
+# Internal presentations (not for public repo)
+presentation_*.html
+presentation_*.md
+
+# Installer builds
+*.spec
+build/
