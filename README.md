@@ -327,6 +327,4 @@ SOFTWARE.
 
 **Built with:** Python, MCP SDK, OpenAI, NumPy, rank-bm25
 
-**Certified:** Claude Certified Architect – Professional
-
 **Status:** MVP (Segments 0-4 complete, ready for testing)
