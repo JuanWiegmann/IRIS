@@ -20,7 +20,7 @@ IRIS is an MCP middleware server that provides personalization, validation, and 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/JuanWiegmann/KIM.git IRIS
+git clone https://github.com/JuanWiegmann/IRIS.git
 cd IRIS
 ```
 
@@ -320,7 +320,7 @@ SOFTWARE.
 
 ## Support
 
-- **Issues:** https://github.com/JuanWiegmann/KIM/issues
+- **Issues:** https://github.com/JuanWiegmann/IRIS/issues
 - **Logs:** Share `~/.iris/logs/iris_server.log`
 
 ---
