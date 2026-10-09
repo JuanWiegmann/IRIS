@@ -1,0 +1,6 @@
+{
+  "name": "iris-context-guard",
+  "version": "0.1.0",
+  "description": "Validates IRIS context is loaded before each response",
+  "types": "./types/index.d.ts"
+}

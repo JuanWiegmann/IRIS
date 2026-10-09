@@ -1,0 +1,6 @@
+{
+  "name": "iris-profile-pane",
+  "version": "0.1.0",
+  "description": "Live profile view showing IRIS personalization settings",
+  "types": "./types/index.d.ts"
+}
